@@ -228,20 +228,23 @@ function getAllWeeksInMonth(year, month) {
     return weeks;
 }
 
-// Générer une clé de semaine
-function getWeekKey(start, end) {
+// Générer une clé de semaine - VERSION CORRIGÉE
+function getWeekKey(start, end, month) {
     const startStr = formatDateLocal(start);
     const endStr = formatDateLocal(end);
-    const weekNumber = getWeekNumberLocal(start);
+    // CORRECTION : Utiliser la semaine ISO pour janvier
+    const weekNumber = (month === 1) ? getISOWeekNumber(start) : getWeekNumberLocal(start);
     return `S${weekNumber} (${startStr} - ${endStr})`;
 }
 
-// Obtenir la clé de semaine pour une date
+// Obtenir la clé de semaine pour une date - VERSION CORRIGÉE
 function getWeekKeyForDate(date) {
     const weekStart = getWeekStart(date);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
-    return getWeekKey(weekStart, weekEnd);
+    // CORRECTION : Passer le mois pour utiliser la bonne méthode de calcul
+    const month = date.getMonth() + 1;
+    return getWeekKey(weekStart, weekEnd, month);
 }
 
 // Obtenir le début de la semaine (lundi) pour une date
@@ -338,7 +341,7 @@ function displayDailyHours(hoursByDay, employee, year, month) {
     document.getElementById('employeeDailyHours').innerHTML = html;
 }
 
-// Grouper les jours par semaine avec les jours vides en début de mois
+// Grouper les jours par semaine avec les jours vides en début de mois - VERSION CORRIGÉE
 function groupDaysByWeek(hoursByDay, year, month) {
     const weeks = {};
     const monthInt = parseInt(month);
@@ -348,8 +351,9 @@ function groupDaysByWeek(hoursByDay, year, month) {
     const firstDay = new Date(yearInt, monthInt - 1, 1);
     const lastDay = new Date(yearInt, monthInt, 0);
 
-    // Trouver le lundi de la semaine qui contient le 1er du mois
-    const weekStart = new Date(firstDay);
+    let weekStart = new Date(firstDay);
+
+    // Pour tous les mois, trouver le lundi de la semaine
     while (weekStart.getDay() !== 1) { // 1 = lundi
         weekStart.setDate(weekStart.getDate() - 1);
     }
@@ -358,7 +362,7 @@ function groupDaysByWeek(hoursByDay, year, month) {
 
     // Parcourir toutes les semaines du mois
     while (currentDate <= lastDay || currentDate.getMonth() === monthInt - 1) {
-        const weekNumber = getWeekNumberLocal(currentDate);
+        const weekNumber = getWeekNumberLocal(currentDate, weekStart);
         const weekKey = `Semaine ${weekNumber}`;
 
         if (!weeks[weekKey]) {
@@ -368,36 +372,60 @@ function groupDaysByWeek(hoursByDay, year, month) {
             };
         }
 
-        // Ajouter les 7 jours de la semaine
+        // CORRECTION : Créer un tableau temporaire pour stocker les jours dans l'ordre chronologique
+        const tempDays = [];
+
+        // Récupérer les 7 jours de la semaine dans l'ordre chronologique
         for (let i = 0; i < 7; i++) {
             const currentDay = new Date(currentDate);
             currentDay.setDate(currentDate.getDate() + i);
 
-            // Vérifier si le jour est dans le mois sélectionné
             if (currentDay.getMonth() === monthInt - 1 && currentDay.getFullYear() === yearInt) {
                 const dateStr = `${yearInt}-${monthInt.toString().padStart(2, '0')}-${currentDay.getDate().toString().padStart(2, '0')}`;
                 const dayName = currentDay.toLocaleDateString('fr-FR', { weekday: 'short' });
                 const hours = hoursByDay[dateStr] || 0;
 
-                weeks[weekKey].days.push({
+                tempDays.push({
                     dateStr: dateStr,
                     dayName: dayName,
                     dayNumber: currentDay.getDate(),
                     formattedDate: currentDay.toLocaleDateString('fr-FR'),
                     hours: hours,
-                    inMonth: true
+                    inMonth: true,
+                    dayOfWeek: currentDay.getDay() // 0=dimanche, 1=lundi, etc.
                 });
             } else {
-                // Jour hors du mois (vide)
-                weeks[weekKey].days.push({
+                tempDays.push({
                     dateStr: '',
                     dayName: '',
                     dayNumber: '',
                     formattedDate: '',
                     hours: 0,
-                    inMonth: false
+                    inMonth: false,
+                    dayOfWeek: (currentDate.getDay() + i) % 7
                 });
             }
+        }
+
+        // CORRECTION : Réorganiser pour que lundi soit toujours en première position
+        // Trouver l'index du lundi dans le tableau temporaire
+        let mondayIndex = -1;
+        for (let i = 0; i < tempDays.length; i++) {
+            if (tempDays[i].inMonth && tempDays[i].dayOfWeek === 1) {
+                mondayIndex = i;
+                break;
+            }
+        }
+
+        if (mondayIndex !== -1) {
+            // Réorganiser le tableau pour commencer par lundi
+            weeks[weekKey].days = [
+                ...tempDays.slice(mondayIndex), // De lundi à dimanche
+                ...tempDays.slice(0, mondayIndex)  // De dimanche précédent à lundi
+            ];
+        } else {
+            // Si pas de lundi trouvé, garder l'ordre original
+            weeks[weekKey].days = tempDays;
         }
 
         // Passer à la semaine suivante
@@ -413,23 +441,15 @@ function groupDaysByWeek(hoursByDay, year, month) {
 }
 
 // Obtenir le numéro de semaine local
-function getWeekNumberLocal(date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
+function getWeekNumberLocal(date, monthStart) {
+    // date : objet Date du jour concerné
+    // monthStart : premier lundi couvrant le mois (weekStart dans ton code)
 
-    // Premier jour de l'année
-    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const diffDays = Math.floor((date - monthStart) / (24 * 60 * 60 * 1000));
 
-    // Ajuster pour que la semaine commence le lundi
-    const dayOfWeek = d.getDay();
-    const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Lundi=0, Dimanche=6
-
-    // Calculer le numéro de semaine
-    const diff = Math.floor((d - yearStart) / (24 * 60 * 60 * 1000));
-    const weekNumber = Math.floor((diff + yearStart.getDay() - 1) / 7) + 1;
-
-    return weekNumber;
+    return Math.floor(diffDays / 7) + 1;
 }
+
 
 // Afficher le total mensuel
 function displayMonthlyHours(total, employee, month, year) {

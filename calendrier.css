@@ -986,7 +986,7 @@ td[data-column="Observations"] {
   position: absolute !important;
   top: 0;
   right: 0;
-  z-index: 9999;
+  z-index: 9999 !important;
   background: red;
   color: white !important;
   font-size: 16px !important;
@@ -1127,7 +1127,7 @@ td[data-column="Observations"] {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.5);
-  z-index: 11000;
+  z-index: 9999;
 }
 .popup-content {
   background: #fff; padding: 20px; border-radius: 8px;
@@ -1307,7 +1307,7 @@ td[data-column="Observations"] {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5); /* fond semi-transparent */
-  z-index: 11000; /* au-dessus de tout */
+  z-index: 10000; /* au-dessus de tout */
   justify-content: center;
   align-items: center;
 }
@@ -1512,3 +1512,582 @@ td[data-column="Observations"] {
 .btn-send-photos:hover {
     background-color: #45a049;
 }
+
+/* ESPACE UNIQUEMENT QUAND LA VUE HEBDOMADAIRE EST ACTIVE */
+.weekly-view-container[style*="display: block"] {
+    margin-top: 50px;
+}
+
+/* ========================================= */
+/* === VUE HEBDOMADAIRE : CONTENEUR GLOBAL === */
+/* ========================================= */
+
+.weekly-view-container {
+    width: 80%;
+    height: calc(100vh - 200px);
+    min-height: 600px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    margin: 25px auto;
+    overflow: hidden;
+}
+
+/* ========================================= */
+/* === EN-TÊTE AVEC BOUTONS === */
+/* ========================================= */
+
+.weekly-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #ced4da;
+    border-bottom: 4px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+.weekly-header h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #333;
+}
+
+.week-nav-btn {
+    padding: 8px 16px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* ========================================= */
+/* === CONTENEUR DE LA GRILLE AVEC SCROLL === */
+/* ========================================= */
+
+.weekly-grid-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    height: 100%;
+}
+
+/* ========================================= */
+/* === GRILLE PRINCIPALE === */
+/* ========================================= */
+
+.weekly-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    grid-auto-rows: 50px;
+    min-width: 1100px;
+    background: white;
+    height: fit-content;
+    min-height: 800px; /* FORCER une hauteur minimale */
+    row-gap: 1px;
+    column-gap: 2px;
+    border: 4px solid #dee2e6;
+}
+
+/* ========================================= */
+/* === COIN SUPÉRIEUR GAUCHE === */
+/* ========================================= */
+
+.grid-corner {
+    grid-column: 1;
+    grid-row: 1;
+    background: #e9ecef;
+    border-right: 4px solid #dee2e6;
+    border-bottom: 4px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 20;
+}
+
+/* ========================================= */
+/* === EN-TÊTES DES JOURS (FIXÉS EN HAUT) === */
+/* ========================================= */
+
+.day-header {
+    grid-row: 1;
+    background: #f8f9fa;
+    border-right: 4px solid #dee2e6;
+    border-bottom: 4px solid #dee2e6;
+    padding: 8px 5px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+}
+
+.day-header:last-child {
+    border-right: 4px solid #dee2e6; /* ASSURER LA BORDURE DU DERNIER JOUR */
+}
+
+.day-header.today {
+    background: #007bff;
+    color: white;
+}
+
+.day-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin: 0;
+}
+
+.day-date {
+    font-size: 11px;
+    color: #666;
+    margin: 0;
+}
+
+.day-header.today .day-date {
+    color: white;
+}
+
+/* ========================================= */
+/* === COLONNE DES HEURES (FIXÉE À GAUCHE) === */
+/* ========================================= */
+
+.time-label {
+    background: #f8f9fa;
+    border-right: 4px solid #dee2e6;
+    border-bottom: 4px solid #dee2e6;
+    padding: 5px;
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    height: 50px; /* ← FORCER 50px */
+    box-sizing: border-box; /* ← IMPORTANT : inclut bordure/padding dans la hauteur */
+}
+
+/* ALTERNANCE DES COULEURS POUR LES LABELS D'HEURE */
+.time-label:nth-child(odd) {
+    background: #ffffff; /* Lignes impaires en blanc */
+}
+
+.time-label:nth-child(even) {
+    background: #f8f9fa; /* Lignes paires en gris clair */
+}
+
+.time-label:last-child {
+    border-bottom: 4px solid #dee2e6; /* DERNIÈRE LIGNE */
+}
+
+/* ========================================= */
+/* === CELLULES DE LA GRILLE === */
+/* ========================================= */
+
+.day-slot {
+    border-right: 4px solid #dee2e6;
+    border-bottom: 4px solid #dee2e6;
+    padding: 3px;
+    background: white;
+    cursor: pointer;
+    min-height: 50px;
+    overflow-y: auto;
+}
+
+/* ALTERNANCE DES COULEURS DES LIGNES */
+.day-slot:nth-child(16n+1),
+.day-slot:nth-child(16n+2),
+.day-slot:nth-child(16n+3),
+.day-slot:nth-child(16n+4),
+.day-slot:nth-child(16n+5),
+.day-slot:nth-child(16n+6),
+.day-slot:nth-child(16n+7),
+.day-slot:nth-child(16n+8) {
+    background: #ffffff; /* Première ligne de chaque heure en blanc */
+}
+
+.day-slot:nth-child(16n+9),
+.day-slot:nth-child(16n+10),
+.day-slot:nth-child(16n+11),
+.day-slot:nth-child(16n+12),
+.day-slot:nth-child(16n+13),
+.day-slot:nth-child(16n+14),
+.day-slot:nth-child(16n+15),
+.day-slot:nth-child(16n+16) {
+    background: #C6DCDC; /* Deuxième ligne de chaque heure en gris clair */
+}
+
+.day-slot:hover {
+    background: #C6DCDC;
+}
+
+/* ========================================= */
+/* === ÉVÉNEMENTS DANS LES CELLULES === */
+/* ========================================= */
+
+.slot-event {
+    background: white;
+    border: 4px solid #ddd;
+    border-left: 6px solid #007bff;
+    border-radius: 3px;
+    padding: 4px 6px;
+    margin-bottom: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.event-picto {
+    font-size: 13px;
+}
+
+.event-time {
+    font-weight: bold;
+    color: #333;
+    font-size: 10px;
+}
+
+.event-client {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+}
+
+/* ========================================= */
+/* === NOTES DANS LES CELLULES === */
+/* ========================================= */
+
+.slot-note {
+    background: #fff3cd;
+    border: 4px dashed #ffc107;
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 10px;
+    margin-top: 3px;
+    color: #856404;
+    cursor: pointer;
+    word-break: break-word;
+}
+
+.slot-note:hover {
+    background: #ffeaa7;
+}
+
+/* ========================================= */
+/* === PICTOGRAMMES DES ÉVÉNEMENTS === */
+/* ========================================= */
+
+.event-picto {
+    font-size: 16px !important; /* Taille forcée */
+    color: #333 !important; /* Couleur visible */
+    display: inline-block !important;
+    min-width: 20px !important;
+    text-align: center !important;
+}
+
+/* ========================================= */
+/* === LIGNE DU TEMPS ACTUEL === */
+/* ========================================= */
+
+.current-time-line {
+    position: absolute;
+    left: 60px; /* Même largeur que la colonne heures */
+    right: 0;
+    height: 4px;
+    background: #ff4444;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.current-time-line::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background: #ff4444;
+    border-radius: 50%;
+}
+
+/* ========================================= */
+/* === POPUP DES SLOTS === */
+/* ========================================= */
+
+.weekly-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.weekly-popup-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    text-align: center;
+    min-width: 300px;
+}
+
+.popup-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#addRdvBtn {
+    background: #007bff;
+    color: white;
+}
+
+#addNoteBtn {
+    background: #ffc107;
+    color: #333;
+}
+
+#closePopupBtn {
+    background: #6c757d;
+    color: white;
+}
+
+/* ========================================= */
+/* === popup des tir de recherche === */
+/* ========================================= */
+
+.client-result-item {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin: 5px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+}
+
+.client-result-item:hover {
+    background: #f8f9fa;
+}
+
+.client-result-item.selected {
+    background: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.client-info {
+    font-size: 12px;
+    color: #666;
+}
+
+.client-result-item.selected .client-info {
+    color: #e6f3ff;
+}
+
+/* STYLE UNIQUEMENT POUR LES BOUTONS DE NAVIGATION PRINCIPALE */
+#homeButton,
+#statsButton,
+#switchToDailyView,
+#dailyButton,
+#weeklyButton {
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin: 5px 10px;
+    min-width: 70px;
+    height: 60px;
+
+    /* AJOUTEZ CES 3 LIGNES POUR L'ALIGNEMENT */
+    flex: 1;
+    min-width: 180px;
+    max-width: 200px;
+
+    /* Dégradé de couleur */
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    color: white;
+
+    /* Effet bombé (neumorphism) */
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2),
+                -5px -5px 15px rgba(255, 255, 255, 0.1),
+                inset 2px 2px 5px rgba(255, 255, 255, 0.3),
+                inset -2px -2px 5px rgba(0, 0, 0, 0.2);
+
+    /* Effet brillant */
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Effet de brillance au survol */
+#homeButton::before,
+#statsButton::before,
+#switchToDailyView::before,
+#dailyButton::before,
+#weeklyButton::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+    opacity: 0;
+}
+
+#homeButton:hover::before,
+#statsButton:hover::before,
+#switchToDailyView::before,
+#dailyButton:hover::before,
+#weeklyButton:hover::before {
+    opacity: 1;
+    transform: rotate(45deg) translate(20px, 20px);
+}
+
+/* Effet au survol */
+#homeButton:hover,
+#statsButton:hover,
+#switchToDailyView:hover,
+#dailyButton:hover,
+#weeklyButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.25),
+                -8px -8px 20px rgba(255, 255, 255, 0.15),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Effet au clic */
+#homeButton:active,
+#statsButton:hover,
+#switchToDailyView:active,
+#dailyButton:active,
+#weeklyButton:active {
+    transform: translateY(1px);
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2),
+                -2px -2px 10px rgba(255, 255, 255, 0.1),
+                inset 3px 3px 8px rgba(0, 0, 0, 0.3),
+                inset -3px -3px 8px rgba(255, 255, 255, 0.2);
+}
+
+/* --- Overlay de Blocage et Conteneur Central --- */
+
+/* 1. Overlay (Bloque les clics) */
+#loading-overlay {
+    /* Propriétés définies en ligne, mais mieux de les centraliser ici pour l'esthétique */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Noir plus opaque pour un meilleur contraste */
+    z-index: 99999; /* ✅ S'assurer d'être au-dessus de TOUT (lightbox, modales, etc.) */
+    justify-content: center;
+    align-items: center;
+}
+
+/* 2. Indicateur de Chargement (La boîte blanche) */
+#loading-indicator {
+    background-color: var(--base-3); /* Blanc */
+    color: var(--contrast);
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 300px;
+    width: 100%;
+    z-index: 100000;
+}
+
+/* 3. Texte du message */
+[data-i18n="loading_recurrence"] {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: var(--accent); /* Utiliser votre couleur d'accent pour le texte */
+}
+
+/* --- Barre de Progression --- */
+
+/* 4. Conteneur de la barre (le fond gris) */
+.progress-bar-container {
+    width: 100%;
+    height: 25px;
+    border: 1px solid var(--contrast-3); /* Bordure légère */
+    border-radius: 5px;
+    background-color: var(--base-2);
+    overflow: hidden; /* Important pour que la barre interne soit coupée correctement */
+    margin: 15px 0 10px 0; /* Ajout de marge pour l'espacement */
+}
+
+/* 5. La barre interne (la couleur qui avance) */
+#progress-bar {
+    height: 100%;
+    background-color: var(--003); /* Utiliser votre couleur --003 (Vert/Cyan) */
+    transition: width 0.3s ease-out; /* Animation plus douce lors de la mise à jour */
+}
+
+/* 6. Texte du pourcentage */
+#progress-text {
+    font-size: 1em;
+    font-weight: bold;
+    color: var(--contrast-2);
+}
+
+/* --- Styles pour la gestion du débordement dans la zone de récurrence --- */
+
+.recurrence-options-container {
+    /* Hauteur maximale que ce bloc peut prendre */
+    max-height: 200px; /* Ajustez cette valeur si nécessaire (ex: 200px ou 300px) */
+
+
+    /* Cache le défilement horizontal */
+    overflow-x: hidden;
+
+    /* Important : ajoute un padding pour ne pas que le contenu soit caché par la barre de défilement */
+    padding-right: 30px;
+    margin-bottom: 15px;
+
+    /* Optionnel : ajoute une bordure pour mieux visualiser le conteneur */
+    /* border: 1px dashed #ccc; */
+}
+
+#progressText {
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.week-nav-btn.current-week {
+    background: #28a745;
+    font-weight: bold;
+}
+

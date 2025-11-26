@@ -141,6 +141,19 @@
         let isProgrammaticClick = false;
         const isConfigUser = localStorage.getItem('currentPersonIsConfigUser') === 'true';
         let isFetchingEvents = false;
+        let connectedUserName = '';
+
+        let selectedClient = null;
+        let currentPopupData = null;
+        let draggedEvent = null;
+        let recurrenceAlerts = [];
+
+        // Les éléments DOM
+        const overlay = document.getElementById("loading-overlay");
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+
+
 
         // =======================================================
         // UTILITAIRES DE SYNCHRONISATION ET HORS LIGNE
@@ -299,6 +312,47 @@
             isSyncing = false;
             console.log(`\n🎉 Synchronisation terminée : ${successCount} succès, ${failCount} échecs. Reste ${queue.length - successCount} élément(s) en attente.`);
         }
+
+        // -----------------------------------------------------------------
+        // -----------------------------------------------------------------
+        // Gestion des boutons
+        // -----------------------------------------------------------------
+        // -----------------------------------------------------------------
+
+        // Gestion du bouton statistiques
+        document.getElementById('statsButton').addEventListener('click', function() {
+            // Récupérer les informations utilisateur
+            const userName = localStorage.getItem('currentPersonName');
+            const isConfigUser = localStorage.getItem('currentPersonIsConfigUser') === 'true';
+
+            // Passer les paramètres dans l'URL
+            const params = new URLSearchParams({
+                user: userName || '',
+                isConfig: isConfigUser
+            });
+
+            window.location.href = `statistiques.html?${params.toString()}`;
+        });
+
+        // Gestion du bouton journalier
+        document.getElementById('dailyButton').addEventListener('click', function() {
+            // Récupérer les informations utilisateur
+            const userName = localStorage.getItem('currentPersonName');
+            const isConfigUser = localStorage.getItem('currentPersonIsConfigUser') === 'true';
+
+            // Passer les paramètres dans l'URL
+            const params = new URLSearchParams({
+                user: userName || '',
+                isConfig: isConfigUser
+            });
+
+            window.location.href = `journalier.html?${params.toString()}`;
+        });
+
+        // Gestion du bouton accueil
+        document.getElementById('homeButton').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
 
         // ✅ Fonction unique pour les dates locales (à mettre au début de votre code)
         function getLocalDateString(date = new Date()) {
@@ -817,22 +871,6 @@
             return new Date(year, month - 1, day); // ⚡ construit en LOCAL
         }
 
-        async function generateRecurrenceDatesWithLoading(startDate, rule) {
-            const indicator = document.getElementById("loading-indicator");
-            if (indicator) indicator.style.display = "block"; // montrer
-
-            // Petite pause pour que le DOM rafraîchisse l’affichage du message
-            await new Promise(resolve => setTimeout(resolve, 50));
-
-            let results;
-            try {
-                results = generateRecurrenceDates(startDate, rule);
-            } finally {
-                if (indicator) indicator.style.display = "none"; // cacher
-            }
-            return results;
-        }
-
         // ==========================================
         // VARIABLES GLOBALES ET CONFIGURATION
         // ==========================================
@@ -981,6 +1019,30 @@
             }
         }
 
+        async function generateRecurrenceDatesWithLoading(startDate, rule) {
+            if (overlay) {
+                overlay.style.display = "flex";
+                if (progressBar) progressBar.style.width = "0%";
+                if (progressText) progressText.textContent = "Calcul des dates...";
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            let results;
+            try {
+                // Appel sans updateProgress puisque la fonction n'existe plus
+                results = await generateRecurrenceDates(startDate, rule);
+
+                if (progressText) {
+                    progressText.textContent = `${results.length} événements vont être créés`;
+                }
+
+            } finally {
+                // L'overlay reste visible pour l'insertion
+            }
+            return results;
+        }
+
         function calculateRelativeMonthlyDate(baseDate, weekOfMonth, dayOfWeek) {
             const today = normalizeToMidnight(new Date());
             const year = baseDate.getFullYear();
@@ -1037,13 +1099,12 @@
             return foundDate;
         }
 
-        function generateRecurrenceDates(startDate, rule) {
+        async function generateRecurrenceDates(startDate, rule) {
             const results = [];
             if (!rule || rule.frequency === "none") {
                 return [startDate];
             }
 
-            // ⚡️ Toujours convertir en objet Date en LOCAL
             if (typeof startDate === "string") {
                 startDate = parseLocalDate(startDate);
             } else {
@@ -1053,91 +1114,110 @@
 
             const endDate = rule.endDate
                 ? (typeof rule.endDate === "string" ? parseLocalDate(rule.endDate) : new Date(rule.endDate))
-                : new Date(startDate);
+                : new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate());
 
             let current = new Date(startDate);
-
             const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             const ruleDayIndices = (rule.days || []).map(dayName =>
                 weekDays.indexOf(dayName.toLowerCase())
             );
 
-            console.log("=== Début generateRecurrenceDates ===");
-            console.log("startDate :", formatDateLocal(startDate), "(", weekDays[startDate.getDay()], ")");
-            console.log("endDate   :", formatDateLocal(endDate));
-            console.log("rule.days :", rule.days, "=> indices", ruleDayIndices);
+            let iterationCount = 0;
+            const MAX_ITERATIONS = 10000;
 
-            if (rule.frequency === "daily") {
-                while (current <= endDate) {
+            while (current <= endDate && iterationCount < MAX_ITERATIONS) {
+                iterationCount++;
+
+                if (rule.frequency === "daily") {
                     results.push(formatDateLocal(current));
                     current.setDate(current.getDate() + 1);
                 }
-            }
-
-            else if (rule.frequency === "weekly") {
-                console.log("--- MODE WEEKLY ---");
-
-                while (current <= endDate) {
+                else if (rule.frequency === "weekly") {
                     const dayIndex = current.getDay();
-                    const dayName = weekDays[dayIndex];
-
-                    console.log("→ Vérif date :", formatDateLocal(current), "| jour :", dayName, "(", dayIndex, ")");
-
                     if (ruleDayIndices.includes(dayIndex)) {
-                        console.log("✅ Jour valide trouvé :", dayName, "→ ajout");
                         results.push(formatDateLocal(current));
-                    } else {
-                        console.log("❌ Jour non valide :", dayName, "→ ignoré");
                     }
-
                     current.setDate(current.getDate() + 1);
                 }
-            }
-
-            else if (rule.frequency === "monthly") {
-                console.log("--- MODE MONTHLY ---");
-                console.log("rule.monthlyType:", rule.monthlyType);
-                console.log("rule.dayOfMonth:", rule.dayOfMonth);
-                console.log("rule.weekOfMonth:", rule.weekOfMonth);
-                console.log("rule.dayOfWeek:", rule.dayOfWeek);
-
-                while (current <= endDate) {
+                else if (rule.frequency === "monthly") {
                     let targetDate;
-
                     if (rule.monthlyType === "relative") {
-                        // Nouvelle logique : jour relatif (ex: premier lundi)
                         targetDate = calculateRelativeMonthlyDate(current, rule.weekOfMonth, rule.dayOfWeek);
                     } else {
-                        // Ancienne logique : jour fixe du mois
                         targetDate = new Date(current);
                         targetDate.setDate(rule.dayOfMonth || current.getDate());
                     }
 
-                    if (targetDate && targetDate <= endDate) {
+                    if (targetDate && targetDate >= startDate && targetDate <= endDate) {
                         results.push(formatDateLocal(targetDate));
-                    } else if (!targetDate) {
-                        console.log("Aucune date valide trouvée pour le mois:", formatDateLocal(current));
                     }
                     current.setMonth(current.getMonth() + 1);
                 }
-            }
-
-            else if (rule.frequency === "yearly") {
-                while (current <= endDate) {
+                else if (rule.frequency === "yearly") {
                     const temp = new Date(current);
                     temp.setMonth((rule.month || temp.getMonth()) - 1);
                     temp.setDate(rule.day || temp.getDate());
-                    if (temp <= endDate) {
+
+                    if (temp >= startDate && temp <= endDate) {
                         results.push(formatDateLocal(temp));
                     }
                     current.setFullYear(current.getFullYear() + 1);
                 }
             }
 
-            console.log("Résultats générés :", results);
-            console.log("=== Fin generateRecurrenceDates ===");
-
             return [...new Set(results)].sort();
+        }
+
+        // Fonction pour estimer le nombre total d'événements
+        async function estimateTotalEvents(startDate, rule, endDate) {
+            if (!rule || rule.frequency === "none") return 1;
+
+            let total = 0;
+            const tempDate = new Date(startDate);
+            const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const ruleDayIndices = (rule.days || []).map(dayName =>
+                weekDays.indexOf(dayName.toLowerCase())
+            );
+
+            if (rule.frequency === "daily") {
+                const diffTime = endDate - startDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                total = Math.max(1, diffDays + 1);
+            }
+
+            else if (rule.frequency === "weekly") {
+                let count = 0;
+                const temp = new Date(startDate);
+                while (temp <= endDate) {
+                    if (ruleDayIndices.includes(temp.getDay())) {
+                        count++;
+                    }
+                    temp.setDate(temp.getDate() + 1);
+                }
+                total = Math.max(1, count);
+            }
+
+            else if (rule.frequency === "monthly") {
+                let count = 0;
+                const temp = new Date(startDate);
+                while (temp <= endDate) {
+                    count++;
+                    temp.setMonth(temp.getMonth() + 1);
+                }
+                total = Math.max(1, count);
+            }
+
+            else if (rule.frequency === "yearly") {
+                let count = 0;
+                const temp = new Date(startDate);
+                while (temp <= endDate) {
+                    count++;
+                    temp.setFullYear(temp.getFullYear() + 1);
+                }
+                total = Math.max(1, count);
+            }
+
+            return Math.min(total, 10000); // Limite de sécurité
         }
 
         // 🆕 Fonction centralisée pour insérer dans historique_modif_fran
@@ -1270,7 +1350,7 @@
             showPermanentWelcomeMessage();
             // ... reste de votre logique DOMContentLoaded
             chargerPrefixe(); // Appeler cette fonction pour charger le préfixe
-            // generateCalendar(currentMonth, currentYear); // Génère le calendrier initial
+            generateCalendar(currentMonth, currentYear); // Génère le calendrier initial
             // Le reste de votre logique DOMContentLoaded ici
         });
 
@@ -1589,6 +1669,7 @@
                 }
             });
 
+
             // 3️⃣ Envoyer SEULEMENT les champs qui doivent être mis à jour.
             await updateEventData(row, rendezvousActuel, isSeries, recurrenceId, modificationsFromRow);
         }
@@ -1651,8 +1732,11 @@
             }
 
             if (!window.isTodaySelected) {
-                selectToday();
-                window.isTodaySelected = true;
+                // Délai pour laisser le calendrier se générer complètement
+                setTimeout(() => {
+                    selectToday();
+                    window.isTodaySelected = true;
+                }, 200);
             }
 
             await checkAndHighlightNotes(todayFormatted);
@@ -1947,7 +2031,6 @@
         });
 
         document.addEventListener('DOMContentLoaded', loadDailyNotes);
-
 
 
         function closeModal() {
@@ -3437,9 +3520,23 @@
             if (payéCheckbox) payéCheckbox.checked = false;
         }
 
+        function refreshWeeklyView() {
+            console.log('🔄 Rafraîchissement de la vue hebdomadaire');
+            loadWeeklyView(); // Votre fonction existante
+        }
+
+        // -------------------------------------------------------------------------
         // -------------------------------------------------------------------------
         // FORMULAIRE nouvel événement
         // -------------------------------------------------------------------------
+        // -------------------------------------------------------------------------
+
+        // === AJOUT: Variables pour autocomplétion téléphone ===
+        let currentClientLieux = [];
+        let currentClientData = null;
+
+        // === AJOUT: Événement sur le champ téléphone ===
+        document.getElementById('Téléphone').addEventListener('input', handleTelephoneSearch);
 
         document.getElementById('addEventButton').addEventListener('click', async function() {
             // Récupère les valeurs ou assigne null si l'élément est absent ou vide
@@ -3463,7 +3560,6 @@
 
             // Récupération de la valeur de la case à cocher pour les photos obligatoires
             const obligation_photo = document.getElementById('obligationPhotoCheckbox') ? document.getElementById('obligationPhotoCheckbox').checked : false;
-
 
             // 🔹 Récupération des infos de récurrence
             let recurrence_rule = null;
@@ -3622,12 +3718,28 @@
             const dates = await generateRecurrenceDatesWithLoading(date, recurrence_rule);
             console.log(getTranslation('log_generated_recurrence_dates'), dates);
 
-
             // 🔹 Générer un seul recurrenceId pour toute la série
             const recurrenceId = generateUUID();
 
+            // 🔹 AFFICHER LA BARRE DE PROGRESSION
+            if (overlay) {
+                overlay.style.display = "flex";
+                progressBar.style.width = "0%";
+                progressText.textContent = `0/${dates.length} événements créés`;
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            let insertedCount = 0;
+
             // 🔹 Boucle sur chaque date et insert
             for (const d of dates) {
+                // 🔹 METTRE À JOUR LA PROGRESSION
+                insertedCount++;
+                const percentage = (insertedCount / dates.length) * 100;
+                if (progressBar) progressBar.style.width = `${percentage}%`;
+                if (progressText) progressText.textContent = `${insertedCount}/${dates.length} événements créés`;
+                await new Promise(resolve => setTimeout(resolve, 10));
+
                 const eventId = crypto.randomUUID(); // ✅ On génère l'ID une seule fois ici
 
                 const { error: insertErrorEventQuot1_fran } = await supabase
@@ -3681,10 +3793,18 @@
                     if (histoError) {
                         console.error("Erreur insertion historique_modif_fran:", histoError);
                     } else {
-                        console.log("✅ Historique inséré pour ajout d’événement:", d);
+                        console.log("✅ Historique inséré pour ajout d'événement:", d);
                     }
                 }
             } // ⚠️ L'accolade de fermeture de la boucle 'for' est bien ici.
+
+            // 🔹 CACHER LA BARRE DE PROGRESSION À LA FIN
+            if (overlay) {
+                progressText.textContent = `✅ ${insertedCount} événements créés avec succès`;
+                progressBar.style.width = "100%";
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                overlay.style.display = "none";
+            }
 
 
             // ✅ CODE DE RAFRAÎCHISSEMENT DÉPLACÉ EN DEHORS DE LA BOUCLE
@@ -3695,6 +3815,10 @@
                     try {
                         await fetchEventsByDate(selectedDate);
                         console.log(getTranslation('log_events_fetched_for_date'));
+
+                        refreshWeeklyView();
+                        console.log('🔄 Vue hebdomadaire rafraîchie');
+
                     } catch (error) {
                         console.error(getTranslation('error_refreshing_events'), error);
                     }
@@ -3702,7 +3826,108 @@
             } else {
                 console.error(getTranslation('error_no_date_selected_local_storage'));
             }
-    });
+        });
+
+        // === AJOUT: Fonctions d'autocomplétion téléphone ===
+        async function handleTelephoneSearch(e) {
+            const telephone = e.target.value.trim();
+
+            if (telephone.length < 8) {
+                currentClientLieux = [];
+                // NE PAS resetClientFields() pour garder le nom
+                return;
+            }
+
+            try {
+                console.log('🔍 Recherche client avec téléphone:', telephone);
+
+                const { data: clients, error } = await supabase
+                    .from('tableData1_fran')
+                    .select('Nom, Lieu, Ajouté_pour')
+                    .eq('Téléphone', telephone)
+                    .order('Date', { ascending: false });
+
+                if (error) throw error;
+
+                if (clients && clients.length > 0) {
+                    console.log('✅ Client trouvé:', clients);
+
+                    const lieuxUniques = [...new Set(clients.map(client => client.Lieu).filter(lieu => lieu))];
+                    currentClientLieux = lieuxUniques;
+                    currentClientData = clients[0];
+
+                    const premierClient = clients[0];
+
+                    // NE REMPLIR QUE SI LE CHAMP EST VIDE
+                    const nomField = document.getElementById('Nom');
+                    if (nomField && !nomField.value) {
+                        nomField.value = premierClient.Nom || '';
+                    }
+
+                    updateLieuField(lieuxUniques);
+                    console.log('✅ Champs automatiquement remplis');
+
+                } else {
+                    console.log('❌ Aucun client trouvé avec ce téléphone');
+                    // NE PAS resetClientFields() pour garder les données existantes
+                }
+
+            } catch (error) {
+                console.error('❌ Erreur recherche client:', error);
+                // NE PAS resetClientFields() pour garder les données existantes
+            }
+        }
+
+        function updateLieuField(lieux) {
+            const lieuField = document.getElementById('Lieu');
+            if (!lieuField) return;
+
+            const existingDatalist = document.getElementById('lieuxOptions');
+            if (existingDatalist) existingDatalist.remove();
+
+            if (lieux.length > 0) {
+                const datalist = document.createElement('datalist');
+                datalist.id = 'lieuxOptions';
+
+                lieux.forEach(lieu => {
+                    const option = document.createElement('option');
+                    option.value = lieu;
+                    datalist.appendChild(option);
+                });
+
+                document.body.appendChild(datalist);
+                lieuField.setAttribute('list', 'lieuxOptions');
+                lieuField.placeholder = `Choisir parmi ${lieux.length} lieu(x) ou saisir nouveau`;
+                console.log(`✅ ${lieux.length} lieux disponibles`);
+            } else {
+                lieuField.removeAttribute('list');
+                lieuField.placeholder = 'Saisir le lieu';
+            }
+        }
+
+        function resetClientFields() {
+            if (document.getElementById('Nom')) document.getElementById('Nom').value = '';
+            // Pas de Interlocuteur ni Fonction à réinitialiser
+
+            const lieuField = document.getElementById('Lieu');
+            if (lieuField) {
+                lieuField.value = '';
+                lieuField.removeAttribute('list');
+                lieuField.placeholder = 'Saisir le lieu';
+            }
+
+            currentClientLieux = [];
+            currentClientData = null;
+
+            const existingDatalist = document.getElementById('lieuxOptions');
+            if (existingDatalist) existingDatalist.remove();
+        }
+
+        document.getElementById('Téléphone').addEventListener('change', function(e) {
+            if (e.target.value.trim() === '') {
+                resetClientFields();
+            }
+        });
 
 
             let isCalendarGenerated = false;
@@ -4215,7 +4440,9 @@
         }
 
         // ______________________________________________________________________
+        // ______________________________________________________________________
         // Plus grande fonction
+        // ______________________________________________________________________
         // ______________________________________________________________________
 
         async function fetchEventsByDate(date, preFiltered = null) {
@@ -4317,11 +4544,6 @@
                 data.sort((a, b) => {
                     return heureOrder.indexOf(a.Heure) - heureOrder.indexOf(b.Heure);
                 });
-
-
-
-
-
 
                 // Fonction pour ouvrir une boîte de dialogue avec les messages WhatsApp disponibles
                 function ouvrirPopupWhatsApp(row) {
@@ -4458,13 +4680,18 @@
                       // Création de la ligne
                       const row = tbody.insertRow();
 
-                      // 🔹 Étape 4 : Trouver l’id_code à partir de Ajouté_pour
+                      // 🔹 Étape 4 : Trouver l'id_code à partir de Ajouté_pour
                       const nomEmploye = (event.Ajouté_pour || "").trim().toLowerCase();
                       const idCode = employesMap[nomEmploye];
+                      const employeeColor = getColorForEmployee(event.Ajouté_pour);
 
                       if (!idCode) {
                         console.warn(`⚠️ Aucun id_code trouvé pour l'employé "${event.Ajouté_pour}"`);
                       }
+
+                      // 🔹 Appliquer la couleur à la ligne
+                      row.style.backgroundColor = employeeColor + '20';
+                      row.style.borderLeft = `4px solid ${employeeColor}`;
 
                       // 🔹 Étape 5 : Lier les infos au dataset
                       row.dataset.idCode = idCode || "";
@@ -5920,10 +6147,185 @@
         }
 
 
-        //--------------------------------------------------------------------------------------------------------------------------------
-        //--------------------------------------------------------------------------------------------------------------------------------
-        //--------------------------------------------------------------------------------------------------------------------------------
-        //--------------------------------------------------------------------------------------------------------------------------------
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+        // Fonction pour récupérer les événements d'une semaine complète fetcheventsbyweek
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+
+        async function fetchEventsByWeek(startDate) {
+            // ✅ PROTECTION ANTI-REBOND
+            if (isFetchingEvents) {
+                console.log("⏳ fetchEventsByWeek déjà en cours, ignoré");
+                return [];
+            }
+
+            isFetchingEvents = true;
+
+            try {
+                // Calculer les dates de la semaine (lundi au dimanche)
+                const weekDates = getWeekDates(startDate);
+                const weekStart = weekDates[0];
+                const weekEnd = weekDates[6];
+
+                console.log(`📅 Récupération semaine: ${weekStart} à ${weekEnd}`);
+
+                const connectedUserName = localStorage.getItem('currentPersonName');
+                const isConfigUser = localStorage.getItem('currentPersonIsConfigUser') === 'true';
+
+                // ✅ REQUÊTE pour récupérer tous les événements de la semaine
+                let query = supabase
+                    .from('event_quot1_fran')
+                    .select('*')
+                    .gte('Date', weekStart)
+                    .lte('Date', weekEnd);
+
+                // Appliquer les filtres utilisateur
+                if (connectedUserName && !isConfigUser) {
+                    query = query.eq('Ajouté_pour', connectedUserName);
+                }
+
+                const { data: events, error } = await query;
+
+                if (error) {
+                    console.error('❌ Erreur fetchEventsByWeek:', error);
+                    return [];
+                }
+
+                console.log(`✅ ${events.length} événements récupérés pour la semaine`);
+
+                // ✅ STRUCTURER les données par jour et par heure pour la grille
+                const weekData = {};
+
+                // Initialiser la structure pour tous les jours de la semaine
+                weekDates.forEach(date => {
+                    weekData[date] = {};
+                    // Créer des slots pour toutes les heures de 7h à 21h
+                    for (let hour = 7; hour <= 21; hour++) {
+                        const timeSlot = `${hour}h`;
+                        weekData[date][timeSlot] = [];
+                    }
+                    // Ajouter le slot "Autre"
+                    weekData[date][getTranslation('other_time')] = [];
+                });
+
+                // Remplir avec les événements réels
+                events.forEach(event => {
+                    const date = event.Date;
+                    const heure = event.Heure;
+
+                    if (weekData[date] && weekData[date][heure]) {
+                        weekData[date][heure].push(event);
+                    }
+                });
+
+                return {
+                    events: events,
+                    structuredData: weekData,
+                    weekDates: weekDates
+                };
+
+            } catch (error) {
+                console.error('❌ Erreur fetchEventsByWeek:', error);
+                return [];
+            } finally {
+                isFetchingEvents = false;
+            }
+        }
+
+        // ______________________________________________________________________
+        // Fonctions utilitaires pour les dates de la semaine
+        // ______________________________________________________________________
+
+        function getWeekDates(startDate) {
+            const dates = [];
+            const start = new Date(startDate);
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(start);
+                date.setDate(start.getDate() + i);
+                dates.push(getLocalDateString(date));
+            }
+
+            return dates;
+        }
+
+        function getMonday(date = new Date()) {
+            const d = new Date(date);
+            const day = d.getDay();
+            // Calcul plus clair :
+            const diff = day === 0 ? -6 : 1 - day; // Lundi = jour 1
+            d.setDate(d.getDate() + diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function getCurrentWeekRange() {
+            const monday = getMonday();
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            return {
+                start: getLocalDateString(monday),
+                end: getLocalDateString(sunday),
+                monday: getLocalDateString(monday)
+            };
+        }
+
+        // ______________________________________________________________________
+        // Gestion des Rendez-vous Notes (rappels/tâches)
+        // ______________________________________________________________________
+
+        async function fetchRendezVousNotesForWeek(startDate) {
+            const weekDates = getWeekDates(startDate);
+            const weekStart = weekDates[0];
+            const weekEnd = weekDates[6];
+
+            try {
+                const { data, error } = await supabase
+                    .from('rendez_vous_notes_fran')
+                    .select('*')
+                    .gte('date', weekStart)
+                    .lte('date', weekEnd)
+                    .order('heure', { ascending: true });
+
+                if (error) {
+                    console.error('❌ Erreur fetchRendezVousNotes:', error);
+                    return [];
+                }
+
+                return data || [];
+            } catch (error) {
+                console.error('❌ Exception fetchRendezVousNotes:', error);
+                return [];
+            }
+        }
+
+        async function addRendezVousNote(date, heure, note) {
+            try {
+                const { data, error } = await supabase
+                    .from('rendez_vous_notes_fran')
+                    .insert([{
+                        date: date,
+                        heure: heure,
+                        note: note,
+                        created_by: localStorage.getItem('currentPersonName'),
+                        created_at: new Date().toISOString()
+                    }])
+                    .select();
+
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('❌ Erreur addRendezVousNote:', error);
+                return null;
+            }
+        }
+
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+
+
 
         // Appelée lors du clic sur une date dans le calendrier
         async function handleDateClick(event) {
@@ -7092,8 +7494,1073 @@
 
         window.addEventListener('online', syncData);
 
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+        // VUE HEBDOMADAIRE - Navigation
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+
+         function switchToWeeklyView() {
+            document.querySelector('.calendar-container').style.display = 'none';
+            document.querySelector('.editable-container').style.display = 'none';
+            document.querySelector('.weekly-view-container').style.display = 'block';
+
+            // CACHER le navigation-container avec Précédent/Suivant
+            document.querySelector('.main-container > .navigation-container').style.display = 'none';
+
+            loadWeeklyView();
+        }
+
+        function switchToDailyView() {
+            document.querySelector('.calendar-container').style.display = 'block';
+            document.querySelector('.editable-container').style.display = 'block';
+            document.querySelector('.weekly-view-container').style.display = 'none';
+            document.querySelector('.main-container > .navigation-container').style.display = 'flex';
+            loadTableData();
+        }
+
+        // ✅ GARDER UNIQUEMENT l'événement sur le bouton HTML existant
+        document.getElementById('weeklyButton').addEventListener('click', switchToWeeklyView);
+
+        // ✅ GARDER AUSSI cette ligne
+        document.getElementById('switchToDailyView').addEventListener('click', switchToDailyView);
+
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+        // FONCTIONS VUE HEBDOMADAIRE Grille et données
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+
+        let currentWeekStart = null;
+
+        async function loadWeeklyView() {
+            console.log('🔄 loadWeeklyView démarré');
+
+            // ✅ Charger les employés si nécessaire (en parallèle)
+            if (!employeeNames || employeeNames.length === 0) {
+                console.log('📋 Chargement de la liste des employés...');
+                try {
+                    await loadEmployees();
+                    console.log('✅ Employés chargés:', employeeNames);
+                } catch (error) {
+                    console.error('❌ Erreur chargement employés:', error);
+                }
+            }
+
+            if (!currentWeekStart) {
+                currentWeekStart = getMonday(new Date());
+                console.log('📅 Date actuelle:', new Date());
+                console.log('📅 Lundi calculé:', currentWeekStart);
+            }
+
+            debugWeekDates();
+            updateWeekDisplay();
+            generateWeeklyGrid();
+
+            // Vérifier que la grille est bien générée
+            const slots = document.querySelectorAll('.day-slot');
+            console.log(`📊 ${slots.length} cellules générées`);
+
+            // ✅ Maintenant les couleurs employés sont disponibles
+            loadWeeklyData();
+            attachWeeklyViewEvents();
+            updateCurrentTimeLine();
+
+            console.log('✅ loadWeeklyView terminé');
+        }
+
+        function updateWeekDisplay() {
+            const monday = new Date(currentWeekStart);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            const weekRangeDisplay = document.getElementById('weekRangeDisplay');
+            if (weekRangeDisplay) {
+                weekRangeDisplay.textContent = `Semaine du ${formatDateFrench(monday)} au ${formatDateFrench(sunday)}`;
+            }
+        }
+
+        function generateWeeklyGrid() {
+            const weeklyGrid = document.querySelector('.weekly-grid');
+            if (!weeklyGrid) return;
+
+            weeklyGrid.innerHTML = '';
+
+            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+            // ÉTENDRE les heures de 7h à 22h (16 créneaux au lieu de 15)
+            const hours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+
+            // 1. Coin supérieur gauche
+            const corner = document.createElement('div');
+            corner.className = 'grid-corner';
+            weeklyGrid.appendChild(corner);
+
+            // 2. En-têtes des jours
+            days.forEach((day, index) => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                const date = getDateForDayIndex(index);
+                const today = getLocalDateString(new Date());
+
+                dayHeader.dataset.date = date;
+
+                if (date === today) {
+                    dayHeader.classList.add('today');
+                }
+
+                dayHeader.innerHTML = `
+                    <div class="day-name">${day}</div>
+                    <div class="day-date" data-date="${date}">${formatDateFrenchDirect(date)}</div>
+                `;
+                weeklyGrid.appendChild(dayHeader);
+
+                console.log(`✅ Grille générée: ${hours.length} heures`); // Doit afficher 16
+            });
+
+            // 3. Labels des heures + cellules
+            hours.forEach(hour => {
+                // Label heure
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.textContent = `${hour}h`;
+                weeklyGrid.appendChild(timeLabel);
+
+                // Cellules pour chaque jour
+                for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                    const daySlot = document.createElement('div');
+                    daySlot.className = 'day-slot empty-slot';
+                    daySlot.dataset.date = getDateForDayIndex(dayIndex);
+                    daySlot.dataset.time = `${hour}h`;
+                    daySlot.addEventListener('click', handleSlotClick);
+
+                    // AJOUT IMPORTANT : Événements drag & drop
+                    daySlot.addEventListener('dragover', handleDragOver);
+                    daySlot.addEventListener('drop', handleDrop);
+                    daySlot.addEventListener('dragleave', (e) => {
+                        e.currentTarget.classList.remove('drag-over');
+                    });
+
+                    weeklyGrid.appendChild(daySlot);
+                }
+            });
+
+            console.log(`✅ Grille générée: ${hours.length} heures × 7 jours = ${hours.length * 7} cellules`);
+        }
 
 
+        function updateDayHeaders() {
+            const dayHeaders = document.querySelectorAll('.day-header');
+            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+            dayHeaders.forEach((header, index) => {
+                const date = getDateForDayIndex(index); // "2025-10-27"
+                const today = getLocalDateString();
+
+                // ✅ CORRECTION : Utiliser formatDateFrenchDirect() au lieu de créer un Date
+                header.querySelector('.day-name').textContent = days[index];
+                header.querySelector('.day-date').textContent = formatDateFrenchDirect(date);
+                header.querySelector('.day-date').dataset.date = date;
+
+                if (date === today) {
+                    header.classList.add('today');
+                } else {
+                    header.classList.remove('today');
+                }
+            });
+        }
+
+        // ✅ Ajoutez cette fonction pour formater directement une string YYYY-MM-DD
+        function formatDateFrenchDirect(dateString) {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function getDateForDayIndex(dayIndex) {
+            const date = new Date(currentWeekStart);
+            date.setDate(currentWeekStart.getDate() + dayIndex);
+
+            // ✅ Utilisation directe des composants de date LOCALE
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        }
+
+        // ______________________________________________________________________
+        // CHARGEMENT DES DONNÉES
+        // ______________________________________________________________________
+
+        async function loadWeeklyData() {
+            try {
+                const weekData = await fetchEventsByWeek(currentWeekStart);
+                const notes = await fetchRendezVousNotesForWeek(currentWeekStart);
+
+                displayEventsInGrid(weekData);
+                displayNotesInGrid(notes);
+            } catch (error) {
+                console.error('❌ Erreur loadWeeklyData:', error);
+            }
+        }
+
+        function displayEventsInGrid(weekData) {
+            if (!weekData.structuredData) return;
+
+            Object.keys(weekData.structuredData).forEach(date => {
+                Object.keys(weekData.structuredData[date]).forEach(time => {
+                    const events = weekData.structuredData[date][time];
+                    const slot = findSlot(date, time);
+
+                    if (slot && events.length > 0) {
+                        displayEventsInSlot(slot, events);
+                    }
+                });
+            });
+        }
+
+        function displayNotesInGrid(notes) {
+            notes.forEach(note => {
+                const slot = findSlot(note.date, note.heure);
+                if (slot) {
+                    displayNoteInSlot(slot, note);
+                }
+            });
+        }
+
+        function findSlot(date, time) {
+            const slots = document.querySelectorAll('.day-slot');
+            return Array.from(slots).find(slot =>
+                slot.dataset.date === date && slot.dataset.time === time
+            );
+        }
+
+        function displayEventsInSlot(slot, events) {
+            slot.classList.remove('empty-slot');
+            slot.innerHTML = '';
+
+            events.forEach(event => {
+                const eventElement = createEventElement(event);
+                slot.appendChild(eventElement);
+            });
+        }
+
+        function displayNoteInSlot(slot, note) {
+            const noteElement = document.createElement('div');
+            noteElement.className = 'slot-note';
+            noteElement.textContent = note.note;
+            noteElement.title = `Note: ${note.note}`;
+            noteElement.addEventListener('click', () => editRendezVousNote(note));
+
+            slot.appendChild(noteElement);
+        }
+
+        // ______________________________________________________________________
+        // CRÉATION DES ÉLÉMENTS ÉVÉNEMENTS
+        // ______________________________________________________________________
+
+        function createEventElement(event) {
+            console.log('🔍 Création événement:', event);
+            console.log('📝 Travail:', event.Travail);
+
+            const picto = getPictoForTravail(event.Travail);
+            console.log('🎯 Picto trouvé:', picto);
+
+            const eventElement = document.createElement('div');
+            eventElement.className = 'slot-event';
+            eventElement.draggable = true;
+            eventElement.dataset.eventId = event.user_id;
+
+            // Couleur selon l'employé
+            const employeeColor = getColorForEmployee(event.Ajouté_pour);
+
+            const clientName = event.Nom || 'Sans nom';
+            const addedFor = event.Ajouté_pour || '';
+
+            eventElement.innerHTML = `
+                <div class="event-first-line">
+                    <span class="event-picto" style="font-size: 16px; color: #333;">${picto.symbol}</span>
+                    <span class="event-time">${event.Heure}</span>
+                    <span class="event-client">${clientName}</span>
+                </div>
+                ${addedFor ? `<div class="event-second-line">${addedFor}</div>` : ''}
+            `;
+
+            // Appliquer la couleur de l'employé
+            eventElement.style.borderLeftColor = employeeColor;
+
+            // Événements
+            eventElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEventDetails(event);
+            });
+
+            eventElement.addEventListener('dragstart', handleDragStart);
+
+            return eventElement;
+        }
+
+        function getPictoForTravail(travail) {
+            console.log('🔧 getPictoForTravail appelé avec:', travail);
+
+            if (!travail) {
+                console.log('❌ Aucun travail, retour picto par défaut');
+                return { symbol: '●' };
+            }
+
+            const travailStr = typeof travail === 'object' ? travail.StatutTravail : travail;
+            console.log('📋 Travail string:', travailStr);
+
+            if (!travailStr) {
+                console.log('❌ Travail string vide, retour picto par défaut');
+                return { symbol: '●' };
+            }
+
+            const pictos = {
+                'Lavage de vitres': { symbol: '🧽' },
+                'Nettoyage de locaux': { symbol: '🏢' },
+                'Nettoyage après chantier': { symbol: '🚧' },
+                'Nettoyage de panneaux photovoltaïques': { symbol: '☀️' },
+                'Lutte contre les nuisibles': { symbol: '🐭' },
+                'Autre : voir observations': { symbol: '●' }
+            };
+
+            const result = pictos[travailStr] || { symbol: '●' };
+            console.log('✅ Picto résultat:', result);
+
+            return result;
+        }
+
+        function getColorForEmployee(employeeName) {
+            if (!employeeName) return '#95a5a6'; // Gris par défaut si pas d'employé
+
+            // Vérifier si employeeNames est chargé
+            if (!employeeNames || employeeNames.length === 0) {
+                console.warn('⚠️ Liste des employés non chargée, chargement en cours...');
+                return generateColorFromName(employeeName); // Couleur de secours
+            }
+
+            // Palette de couleurs prédéfinies (assez large)
+            const colorPalette = [
+                '#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#f39c12',
+                '#1abc9c', '#d35400', '#34495e', '#e84393', '#00cec9',
+                '#0984e3', '#e17055', '#00b894', '#6c5ce7', '#fdcb6e',
+                '#e84393', '#00cec9', '#fd79a8', '#a29bfe', '#55efc4',
+                '#81ecec', '#74b9ff', '#ffeaa7', '#fab1a0', '#ff7675',
+                '#636e72', '#dfe6e9', '#b2bec3', '#f5f5f5', '#2d3436'
+            ];
+
+            // Trouver l'index de l'employé dans la liste
+            const employeeIndex = employeeNames.indexOf(employeeName);
+
+            if (employeeIndex === -1) {
+                console.warn(`⚠️ Employé "${employeeName}" non trouvé dans la liste`);
+                return generateColorFromName(employeeName);
+            }
+
+            // Utiliser une couleur de la palette (répétition si plus d'employés que de couleurs)
+            return colorPalette[employeeIndex % colorPalette.length];
+        }
+
+        // Fonction de secours pour générer une couleur à partir du nom
+        function generateColorFromName(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 70%, 50%)`;
+        }
+
+
+
+        // ______________________________________________________________________
+        // NAVIGATION SEMAINE
+        // ______________________________________________________________________
+
+        function changeWeek(direction) {
+            // ✅ CORRECTION : Créer une nouvelle date
+            const newWeekStart = new Date(currentWeekStart);
+            newWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
+            currentWeekStart = newWeekStart;
+
+            loadWeeklyView();
+        }
+
+        function goToCurrentWeek() {
+            // ✅ CORRECTION : Toujours créer une nouvelle date
+            currentWeekStart = getMonday(new Date());
+            loadWeeklyView();
+
+            // Optionnel : message de confirmation
+            showTemporaryMessage('📅 Retour à la semaine en cours');
+        }
+
+
+        // ______________________________________________________________________
+        // FORMATAGE DATE FRANÇAIS
+        // ______________________________________________________________________
+
+        function formatDateFrench(date) {
+            // ✅ S'assurer qu'elle utilise bien les méthodes locales
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+        // INTERACTIONS VUE HEBDOMADAIRE
+        // ______________________________________________________________________
+        // ______________________________________________________________________
+
+
+
+        function handleSlotClick(event) {
+            const slot = event.currentTarget;
+            const date = slot.dataset.date;
+            const time = slot.dataset.time;
+
+            showSlotPopup(date, time, slot);
+        }
+
+        function showSlotPopup(date, time, slot) {
+            const popup = document.getElementById('weeklySlotPopup');
+            const slotTime = document.getElementById('popupSlotTime');
+
+            slotTime.textContent = `${formatDateFrench(new Date(date))} à ${time}`;
+            popup.style.display = 'flex';
+
+            // ✅ STOCKER DANS LES DEUX ENDROITS
+            popup.dataset.currentDate = date;
+            popup.dataset.currentTime = time;
+            popup.dataset.currentSlot = slot;
+
+            // ✅ AJOUTER CETTE LIGNE IMPORTANTE
+            currentPopupData = { date, time, slot };
+            console.log('📅 currentPopupData défini:', currentPopupData);
+        }
+
+        function getDayIndexFromDate(dateString) {
+            const weekDates = getWeekDates(currentWeekStart);
+            return weekDates.indexOf(dateString);
+        }
+
+        // ______________________________________________________________________
+        // GESTION DU POPUP
+        // ______________________________________________________________________
+
+        function attachWeeklyViewEvents() {
+            // ✅ D'abord retirer tous les événements existants
+            removeWeeklyViewEvents();
+
+            // Navigation
+            document.getElementById('prevWeekBtn').addEventListener('click', handlePrevWeek);
+            document.getElementById('nextWeekBtn').addEventListener('click', handleNextWeek);
+            document.getElementById('todayWeekBtn').addEventListener('click', handleTodayWeek);
+
+            // ✅ AJOUT IMPORTANT - Bouton Vue Journalière
+            document.getElementById('switchToDailyView').addEventListener('click', handleSwitchToDailyView);
+
+            // Popup
+            document.getElementById('addRdvBtn').addEventListener('click', handleAddRdv);
+            document.getElementById('addNoteBtn').addEventListener('click', handleAddNote);
+            document.getElementById('closePopupBtn').addEventListener('click', closePopup);
+
+            // ✅ AJOUT - Boutons sélection client
+            document.getElementById('confirmClientBtn').addEventListener('click', confirmClientSelection);
+            document.getElementById('cancelClientBtn').addEventListener('click', closeClientSelectPopup);
+        }
+
+        // ✅ NOUVELLE FONCTION pour retirer les événements
+        function removeWeeklyViewEvents() {
+            // Navigation
+            document.getElementById('prevWeekBtn').removeEventListener('click', handlePrevWeek);
+            document.getElementById('nextWeekBtn').removeEventListener('click', handleNextWeek);
+            document.getElementById('todayWeekBtn').removeEventListener('click', handleTodayWeek);
+
+            document.getElementById('switchToDailyView').removeEventListener('click', handleSwitchToDailyView);
+
+            // Popup
+            document.getElementById('addRdvBtn').removeEventListener('click', handleAddRdv);
+            document.getElementById('addNoteBtn').removeEventListener('click', handleAddNote);
+            document.getElementById('closePopupBtn').removeEventListener('click', closePopup);
+
+            // Sélection client
+            document.getElementById('confirmClientBtn').removeEventListener('click', confirmClientSelection);
+            document.getElementById('cancelClientBtn').removeEventListener('click', closeClientSelectPopup);
+        }
+
+        // ✅ Définir les fonctions de gestion séparément
+        function handlePrevWeek() { changeWeek(-1); }
+        function handleNextWeek() { changeWeek(1); }
+        function handleTodayWeek() { goToCurrentWeek(); }
+        function handleSwitchToDailyView() { switchToDailyView(); }
+
+
+        function handleClientSearch(e) {
+            const searchTerm = e.target.value.trim();
+            console.log('🔍 Recherche:', searchTerm); // Pour debug
+
+            if (searchTerm.length < 2) {
+                document.getElementById('clientSearchResults').innerHTML = '';
+                return;
+            }
+
+            searchClients(searchTerm);
+        }
+
+        function openClientSelectPopup(date, time) {
+            currentPopupData = { date, time };
+            selectedClient = null;
+
+            const popup = document.getElementById('clientSelectPopup');
+            const searchInput = document.getElementById('clientSearchInput');
+            const confirmBtn = document.getElementById('confirmClientBtn');
+
+            // Réinitialiser
+            searchInput.value = '';
+            document.getElementById('clientSearchResults').innerHTML = '';
+            confirmBtn.style.display = 'none';
+
+            // ATTACHER L'ÉVÉNEMENT DE RECHERCHE
+            searchInput.removeEventListener('input', handleClientSearch); // Nettoyer d'abord
+            searchInput.addEventListener('input', handleClientSearch);
+
+            // Afficher le popup
+            popup.style.display = 'flex';
+            searchInput.focus();
+        }
+
+        function closeClientSelectPopup() {
+            document.getElementById('clientSelectPopup').style.display = 'none';
+            selectedClient = null;
+            currentPopupData = null;
+        }
+
+        function closeWeeklyPopup() {
+            document.getElementById('weeklySlotPopup').style.display = 'none';
+        }
+
+        function handleAddRdv() {
+            const popup = document.getElementById('weeklySlotPopup');
+            const date = popup.dataset.currentDate;
+            const time = popup.dataset.currentTime;
+
+            closePopup();
+
+            // OUVIR LA SÉLECTION CLIENT au lieu d'aller directement au formulaire
+            openClientSelectPopup(date, time);
+        }
+
+        function confirmClientSelection() {
+            if (!selectedClient || !currentPopupData) return;
+
+            const { date, time } = currentPopupData;
+
+            // Remplir le formulaire de nouvel événement
+            fillEventForm(selectedClient, date, time);
+
+            // Fermer les popups
+            closeClientSelectPopup();
+            closeWeeklyPopup(); // Fermer aussi le popup hebdomadaire
+
+            console.log('🎯 Client sélectionné, formulaire ouvert');
+        }
+
+        async function handleAddNote() {
+            const popup = document.getElementById('weeklySlotPopup');
+            const date = popup.dataset.currentDate;
+            const time = popup.dataset.currentTime;
+
+            const note = prompt('Entrez votre note/rappel :');
+            if (note && note.trim()) {
+                const success = await addRendezVousNote(date, time, note.trim());
+                if (success) {
+                    loadWeeklyView(); // Recharger pour afficher la nouvelle note
+                    showTemporaryMessage('✅ Note ajoutée avec succès');
+                }
+            }
+
+            closePopup();
+        }
+
+        function closePopup() {
+            document.getElementById('weeklySlotPopup').style.display = 'none';
+        }
+
+        // ______________________________________________________________________
+        // DRAG & DROP
+        // ______________________________________________________________________
+
+        function handleDragStart(event) {
+            draggedEvent = {
+                element: event.target,
+                eventId: event.target.dataset.eventId
+            };
+            event.dataTransfer.setData('text/plain', event.target.dataset.eventId);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+
+            if (!draggedEvent) return;
+
+            const targetSlot = event.currentTarget;
+            const newDate = targetSlot.dataset.date;
+            const newTime = targetSlot.dataset.time;
+
+            moveEventToSlot(draggedEvent.eventId, newDate, newTime);
+            draggedEvent = null;
+        }
+
+        async function moveEventToSlot(eventId, newDate, newTime) {
+            try {
+                // Mettre à jour dans la base de données
+                const { error } = await supabase
+                    .from('event_quot1_fran')
+                    .update({
+                        Date: newDate,
+                        Heure: newTime
+                    })
+                    .eq('user_id', eventId);
+
+                if (error) throw error;
+
+                // Recharger la vue
+                loadWeeklyView();
+                showTemporaryMessage('✅ Rendez-vous déplacé avec succès');
+
+            } catch (error) {
+                console.error('❌ Erreur déplacement événement:', error);
+                showTemporaryMessage('❌ Erreur lors du déplacement');
+            }
+        }
+
+        // ______________________________________________________________________
+        // OUVERTURE DÉTAILS ÉVÉNEMENT
+        // ______________________________________________________________________
+
+        function openEventDetails(event) {
+            // Réutiliser ta popup de détail existante ou créer une nouvelle
+            showEventDetailsPopup(event);
+        }
+
+        function showEventDetailsPopup(event) {
+            // Ici tu peux réutiliser ton code existant de popup de détail
+            // ou créer une popup spécifique pour la vue hebdomadaire
+
+            const popup = document.createElement('div');
+            popup.className = 'event-details-popup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 10001;
+                max-width: 500px;
+                width: 90%;
+            `;
+
+            popup.innerHTML = `
+                <h3>Détails du rendez-vous</h3>
+                <p><strong>Client:</strong> ${event.Nom || 'Non renseigné'}</p>
+                <p><strong>Téléphone:</strong> ${event.Téléphone || 'Non renseigné'}</p>
+                <p><strong>Date:</strong> ${event.Date} à ${event.Heure}</p>
+                <p><strong>Lieu:</strong> ${event.Lieu || 'Non renseigné'}</p>
+                <p><strong>Type:</strong> ${event.Travail || 'Non renseigné'}</p>
+                <p><strong>Observations:</strong> ${event.Observations || 'Aucune'}</p>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button id="closeDetailsBtn" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Fermer
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            // Fermer la popup
+            document.getElementById('closeDetailsBtn').onclick = function() {
+                document.body.removeChild(popup);
+            };
+
+            // Fermer en cliquant à l'extérieur
+            popup.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    document.body.removeChild(popup);
+                }
+            });
+        }
+
+        // ______________________________________________________________________
+        // GESTION DES NOTES RENDEZ-VOUS
+        // ______________________________________________________________________
+
+        async function editRendezVousNote(note) {
+            const newNote = prompt('Modifier la note :', note.note);
+            if (newNote !== null) {
+                try {
+                    const { error } = await supabase
+                        .from('rendez_vous_notes_fran')
+                        .update({ note: newNote })
+                        .eq('id', note.id);
+
+                    if (error) throw error;
+
+                    loadWeeklyView();
+                    showTemporaryMessage('✅ Note modifiée avec succès');
+                } catch (error) {
+                    console.error('❌ Erreur modification note:', error);
+                    showTemporaryMessage('❌ Erreur lors de la modification');
+                }
+            }
+        }
+
+
+        // ______________________________________________________________________
+        // LIGNE HEURE ACTUELLE : CORRECTION
+        // ______________________________________________________________________
+
+         function updateCurrentTimeLine() {
+            const weeklyGrid = document.querySelector('.weekly-grid');
+            if (!weeklyGrid) return;
+
+            document.querySelectorAll('.current-time-line').forEach(line => line.remove());
+
+            const now = new Date();
+            const currentDayString = getLocalDateString(now);
+
+            const todayHeader = Array.from(document.querySelectorAll('.day-header')).find(header => {
+                return header.dataset.date === currentDayString;
+            });
+
+            if (!todayHeader) return;
+
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            console.log(`🕒 HEURE LOCALE: ${currentHour}:${currentMinute}`);
+
+            const startHour = 7;
+            const cellHeight = 50;
+            const headerRowHeight = 50;
+            const offsetPerHour = 2; // ← AJOUT: décalage de 2px par heure
+
+            if (currentHour < startHour || currentHour > 21) {
+                return;
+            }
+
+            const hoursFromStart = currentHour - startHour;
+            const minutesFraction = currentMinute / 60;
+
+            // AJOUT DE L'OFFSET
+            const hourlyOffset = hoursFromStart * offsetPerHour;
+            const topPosition = headerRowHeight + (hoursFromStart * cellHeight) + (minutesFraction * cellHeight) + hourlyOffset;
+
+            console.log(`📏 Position: ${topPosition}px (offset: +${hourlyOffset}px)`);
+
+            const line = document.createElement('div');
+            line.className = 'current-time-line';
+            line.style.top = topPosition + 'px';
+            line.style.left = '60px';
+
+            weeklyGrid.appendChild(line);
+        }
+
+        // Mettre à jour toutes les minutes (Conserver un seul interval)
+        // ✅ CONSERVER CELUI-CI :
+        setInterval(updateCurrentTimeLine, 60000);
+
+        function debugWeekDates() {
+            const weekDates = getWeekDates(currentWeekStart);
+            console.log('🔍 Debug dates semaine:', {
+                start: currentWeekStart,
+                dates: weekDates,
+                monday: weekDates[0],
+                sunday: weekDates[6]
+            });
+        }
+
+        async function searchClients(searchTerm) {
+            try {
+                // ✅ CORRECTION : Utiliser tableData1_fran pour les clients
+                const { data: clients, error } = await supabase
+                    .from('tableData1_fran') // Table des clients
+                    .select('Téléphone, Nom, Lieu, Ajouté_pour') // Colonnes disponibles
+                    .or(`Téléphone.ilike.%${searchTerm}%,Nom.ilike.%${searchTerm}%,Lieu.ilike.%${searchTerm}%,Ajouté_pour.ilike.%${searchTerm}%`)
+                    .order('Nom', { ascending: true })
+                    .limit(20);
+
+                if (error) throw error;
+
+                displayClientResults(clients, searchTerm);
+
+            } catch (error) {
+                console.error('Erreur recherche clients:', error);
+                document.getElementById('clientSearchResults').innerHTML =
+                    '<p style="text-align: center; color: red;">Erreur de recherche</p>';
+            }
+        }
+
+        function createClientResultItem(client, container, isSubItem = false) {
+            const item = document.createElement('div');
+            item.className = 'client-result-item';
+            if (isSubItem) {
+                item.style.marginLeft = '20px';
+                item.style.borderLeft = '3px solid #007bff';
+            }
+
+            item.innerHTML = `
+                <div style="font-weight: bold;">${client.Interlocuteur || 'Non spécifié'}</div>
+                <div class="client-info">
+                    🏢 ${client.Nom || 'Non spécifié'} • 📞 ${client.Téléphone || 'Non spécifié'} • 💼 ${client.Fonction || 'Non spécifié'}
+                </div>
+            `;
+
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.client-result-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+
+                this.classList.add('selected');
+                selectedClient = client;
+                document.getElementById('confirmClientBtn').style.display = 'block';
+            });
+
+            container.appendChild(item);
+        }
+
+        function fillEventForm(client, date, time) {
+            // 1. Afficher le formulaire Nouvel événement
+            document.querySelector('.form-wrapper').style.display = 'block';
+
+            // 2. Scroll vers le formulaire
+            document.querySelector('.form-wrapper').scrollIntoView({ behavior: 'smooth' });
+
+            // 3. Remplir les champs avec les données du client
+            setTimeout(() => {
+                console.log('🔄 Remplissage du formulaire avec:', client);
+
+                // Champs PRINCIPAUX avec les IDs exacts
+                const telephoneField = document.getElementById('Téléphone');
+                const nomField = document.getElementById('Nom');
+                const interlocuteurField = document.getElementById('Interlocuteur');
+                const fonctionField = document.getElementById('Fonction');
+                const lieuField = document.getElementById('Lieu');
+                const dateField = document.getElementById('Date');
+                const heureField = document.getElementById('Heure');
+                const employeSelect = document.getElementById('employeSelect');
+
+                // Remplir les champs
+                if (telephoneField) {
+                    telephoneField.value = client.Téléphone || '';
+                    console.log('📞 Téléphone rempli:', client.Téléphone);
+                }
+
+                if (nomField) {
+                    nomField.value = client.Nom || '';
+                    console.log('🏢 Nom (entreprise) rempli:', client.Nom);
+                }
+
+                if (interlocuteurField) {
+                    interlocuteurField.value = client.Interlocuteur || '';
+                    console.log('👤 Interlocuteur rempli:', client.Interlocuteur);
+                }
+
+                if (fonctionField) {
+                    fonctionField.value = client.Fonction || '';
+                    console.log('💼 Fonction remplie:', client.Fonction);
+                }
+
+                if (lieuField && client.Lieu) {
+                    lieuField.value = client.Lieu || '';
+                    console.log('📍 Lieu rempli:', client.Lieu);
+                }
+
+                if (dateField && date) {
+                    dateField.value = date;
+                    console.log('📅 Date remplie:', date);
+                }
+
+                if (heureField && time) {
+                    heureField.value = time;
+                    console.log('🕒 Heure remplie:', time);
+                }
+
+                // SÉLECTIONNER L'EMPLOYÉ DYNAMIQUEMENT
+                if (employeSelect) {
+                    const utilisateurConnecte = localStorage.getItem('currentPersonName');
+
+                    if (utilisateurConnecte && employeSelect.querySelector(`option[value="${utilisateurConnecte}"]`)) {
+                        employeSelect.value = utilisateurConnecte;
+                        console.log('👤 Employé défini à:', utilisateurConnecte);
+                    } else {
+                        console.log('⚠️ Employé non trouvé dans la liste:', utilisateurConnecte);
+                    }
+                }
+
+                // FORCER AUCUNE FRÉQUENCE
+                const frequencySelect = document.getElementById('recurrence-frequency');
+                if (frequencySelect) {
+                    frequencySelect.value = 'none';
+                    console.log('🔄 Fréquence forcée à "none"');
+                    frequencySelect.dispatchEvent(new Event('change'));
+                }
+
+
+                console.log('✅ Formulaire complètement pré-rempli');
+
+            }, 500);
+        }
+
+        function displayClientResults(clients, searchTerm) {
+            const resultsContainer = document.getElementById('clientSearchResults');
+            const confirmBtn = document.getElementById('confirmClientBtn');
+
+            resultsContainer.innerHTML = '';
+
+            if (clients.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <p style="color: #666; margin-bottom: 15px;">Aucun client trouvé pour "${searchTerm}"</p>
+                        <button id="createNewClientBtn" style="
+                            padding: 10px 20px;
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">
+                            ➕ Créer un nouveau client
+                        </button>
+                    </div>
+                `;
+
+                // ✅ PASSER currentPopupData en paramètre
+                document.getElementById('createNewClientBtn').addEventListener('click', function() {
+                    createNewClientFromSearch(searchTerm, currentPopupData);
+                });
+
+                confirmBtn.style.display = 'none';
+                return;
+            }
+
+            clients.forEach(client => {
+                const clientItem = document.createElement('div');
+                clientItem.className = 'client-result-item';
+
+                clientItem.innerHTML = `
+                    <div style="font-weight: bold;">${client.Nom || 'Non renseigné'}</div>
+                    <div style="font-size: 0.9em; color: #666;">
+                        📞 ${client.Téléphone || 'Non renseigné'}
+                        ${client.Lieu ? `| 📍 ${client.Lieu}` : ''}
+                        ${client.Ajouté_pour ? `| 👤 ${client.Ajouté_pour}` : ''}
+                    </div>
+                `;
+
+                clientItem.addEventListener('click', () => {
+                    document.querySelectorAll('.client-result-item').forEach(item => {
+                        item.style.background = 'white';
+                    });
+                    clientItem.style.background = '#e3f2fd';
+                    selectedClient = client;
+                    confirmBtn.style.display = 'block';
+                });
+
+                resultsContainer.appendChild(clientItem);
+            });
+
+            confirmBtn.style.display = 'none';
+        }
+
+        function createNewClientFromSearch(searchTerm, popupData) {
+            // Fermer la popup de sélection client
+            closeClientSelectPopup();
+
+            // Afficher le formulaire Nouvel événement
+            document.querySelector('.form-wrapper').style.display = 'block';
+            document.querySelector('.form-wrapper').scrollIntoView({ behavior: 'smooth' });
+
+            // Remplir automatiquement les champs
+            setTimeout(() => {
+                console.log('🔄 Création nouveau client avec terme:', searchTerm);
+                console.log('📅 Données popup:', popupData);
+
+                // DÉSACTIVER temporairement l'autocomplétion téléphone
+                document.getElementById('Téléphone').removeEventListener('input', handleTelephoneSearch);
+
+                // Remplir le champ Nom avec le terme de recherche (si c'est un nom)
+                const nomField = document.getElementById('Nom');
+                if (nomField && searchTerm && searchTerm.length > 2 && !/^\d+$/.test(searchTerm)) {
+                    nomField.value = searchTerm;
+                    console.log('🏢 Nom pré-rempli avec recherche:', searchTerm);
+                }
+
+                // Remplir le champ Téléphone si le terme ressemble à un numéro
+                const telephoneField = document.getElementById('Téléphone');
+                if (telephoneField && /^\d+$/.test(searchTerm)) {
+                    telephoneField.value = searchTerm;
+                    console.log('📞 Téléphone pré-rempli avec recherche:', searchTerm);
+                }
+
+                // ✅ REMPLIR DATE ET HEURE depuis popupData
+                const dateField = document.getElementById('Date');
+                const heureField = document.getElementById('Heure');
+                if (popupData && popupData.date && dateField) {
+                    dateField.value = popupData.date;
+                    console.log('📅 Date pré-remplie:', popupData.date);
+                }
+                if (popupData && popupData.time && heureField) {
+                    heureField.value = popupData.time;
+                    console.log('🕒 Heure pré-remplie:', popupData.time);
+                }
+
+                // SÉLECTIONNER L'EMPLOYÉ CONNECTÉ
+                const employeSelect = document.getElementById('employeSelect');
+                if (employeSelect) {
+                    const utilisateurConnecte = localStorage.getItem('currentPersonName');
+                    if (utilisateurConnecte && employeSelect.querySelector(`option[value="${utilisateurConnecte}"]`)) {
+                        employeSelect.value = utilisateurConnecte;
+                        console.log('👤 Employé défini à:', utilisateurConnecte);
+                    }
+                }
+
+                // FORCER AUCUNE FRÉQUENCE
+                const frequencySelect = document.getElementById('recurrence-frequency');
+                if (frequencySelect) {
+                    frequencySelect.value = 'none';
+                    frequencySelect.dispatchEvent(new Event('change'));
+                }
+
+                // RÉACTIVER l'autocomplétion téléphone après 2 secondes
+                setTimeout(() => {
+                    document.getElementById('Téléphone').addEventListener('input', handleTelephoneSearch);
+                    console.log('✅ Autocomplétion téléphone réactivée');
+                }, 2000);
+
+                // Focus sur le premier champ vide
+                const lieuField = document.getElementById('Lieu');
+                if (lieuField) {
+                    lieuField.focus();
+                }
+
+                console.log('✅ Formulaire prêt pour nouveau client');
+
+            }, 500);
+        }
 
     </script>
 </head>
@@ -7122,11 +8589,42 @@
         </div>
     </div>
 
+    <!-- Barre de notification des rappels clients -->
+    <div id="client-reminder-alert-bar" style="display: none; position: fixed; top: 40px; left: 0; width: 100%; height: 40px; background: rgba(0, 123, 255, 0.95); z-index: 9998; border-bottom: 2px solid #0056b3;">
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 15px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-weight: bold;">⏰</span>
+                <span id="client-reminder-alert-count" style="font-weight: bold;">0 RAPPELS CLIENT</span>
+            </div>
+            <div id="client-reminder-alert-minicards" style="display: flex; gap: 10px; overflow-x: auto; flex: 1; margin: 0 20px;">
+                <!-- Les mini-cartes seront ajoutées dynamiquement ici -->
+            </div>
+            <button id="close-client-reminder-bar" style="background: none; border: none; font-size: 16px; cursor: pointer;">✕</button>
+        </div>
+    </div>
+
+    <!-- Modal de détail des rappels clients -->
+    <div id="client-reminder-alert-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div id="client-reminder-alert-content">
+                <!-- Le contenu détaillé sera injecté ici -->
+            </div>
+        </div>
+    </div>
+
     <div class="background-image"></div>
     <div id="temporaryMessage" style="display: none; position: fixed; top: 10px; right: 10px; background: #66D19E; color: white; padding: 10px; border-radius: 5px; z-index: 1000;"></div>
     <div class="welcome-message" id="welcome-message"></div>
     <div class="main-container">
         <h1 data-i18n="calendar_agenda_heading">Calendrier et Agenda</h1>
+
+        <div style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 600px;">
+            <button id="homeButton">Retour à l'accueil</button>
+            <button id="statsButton">Statistiques</button>
+            <button id="dailyButton">Journalier</button>
+            <button id="weeklyButton">📅 Vue Hebdomadaire</button>
+            <button id="switchToDailyView">📅 Vue Journalière</button>
+        </div>
         <div class="navigation-container">
             <button id="prevButton" class="button" data-i18n="button_previous">Précédent</button>
             <span id="monthYear"></span>
@@ -7175,6 +8673,32 @@
                     <td id="day_2024-11-06" class="calendar-day-note" onclick="openEditModal('2024-11-06')" data-i18n="click_to_add_note">Cliquez pour ajouter une note</td>
                     </tr>
             </table>
+        </div>
+
+        <!-- Calendrier semaine -->
+        <div class="weekly-view-container" style="display: none;">
+            <div class="weekly-header">
+                <h2 id="weekRangeDisplay">Semaine du ... au ...</h2>
+                <button id="prevWeekBtn" class="week-nav-btn">◀️ Semaine précédente</button>
+                <button id="todayWeekBtn" class="week-nav-btn">📅 Cette semaine</button>
+                <button id="nextWeekBtn" class="week-nav-btn">Semaine suivante ▶️</button>
+            </div>
+
+            <div class="weekly-grid-container">
+                <div class="weekly-grid">
+                    <div class="current-time-line" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup pour ajouter RDV/Note -->
+        <div id="weeklySlotPopup" class="weekly-popup" style="display: none;">
+            <div class="weekly-popup-content">
+                <h3 id="popupSlotTime"></h3>
+                <button id="addRdvBtn" class="popup-btn">📅 Ajouter un rendez-vous</button>
+                <button id="addNoteBtn" class="popup-btn">📝 Ajouter une note</button>
+                <button id="closePopupBtn" class="popup-btn cancel">❌ Annuler</button>
+            </div>
         </div>
         <div id="editNoteModal" class="daily-note-modal">
             <div class="daily-note-modal-content">
@@ -7239,6 +8763,29 @@
                 <button id="saveNoteButton" data-i18n="button_save">Enregistrer</button>
             </div>
         </div>
+
+        <div id="clientSelectPopup" class="weekly-popup" style="display: none;">
+            <div class="weekly-popup-content" style="width: 500px;">
+                <h3>Sélectionner un client</h3>
+
+                <!-- Barre de recherche -->
+                <input type="text" id="clientSearchInput" placeholder="Rechercher par téléphone, entreprise ou interlocuteur..."
+                       style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+
+                <!-- Résultats de recherche -->
+                <div id="clientSearchResults" style="max-height: 300px; overflow-y: auto; margin: 10px 0;">
+                    <!-- Les résultats apparaîtront ici -->
+                </div>
+
+                <button class="popup-btn" id="confirmClientBtn" style="display: none;">
+                    ✅ Confirmer la sélection
+                </button>
+                <button class="popup-btn" id="cancelClientBtn">
+                    ❌ Annuler
+                </button>
+            </div>
+        </div>
+
         <div class="editable-container">
             <table id="editable-table">
                 <thead>
@@ -7361,21 +8908,27 @@
                     <option value="yearly" data-i18n="recurrence_yearly">Annuelle</option>
                   </select>
 
-                  <div id="weekly-options" style="display:none; margin-top:10px;">
-                      <span data-i18n="recurrence_days">Jours :</span>
-                      <div class="weekly-grid">
-                        <div class="column">
-                          <label><span data-i18n="day_monday">Lundi</span><input type="checkbox" value="monday"></label>
-                          <label><span data-i18n="day_tuesday">Mardi</span><input type="checkbox" value="tuesday"></label>
-                          <label><span data-i18n="day_wednesday">Mercredi</span><input type="checkbox" value="wednesday"></label>
-                          <label><span data-i18n="day_thursday">Jeudi</span><input type="checkbox" value="thursday"></label>
+                  <div class="recurrence-main-wrapper">
+                    <div id="recurrence-scroll-options" class="recurrence-options-container">
+
+                        <div id="weekly-options" style="display:none; margin-top:10px;">
+                            <span data-i18n="recurrence_days">Jours :</span>
+                            <div class="weekly-grid">
+                                <div class="column">
+                                    <label><span data-i18n="day_monday">Lundi</span><input type="checkbox" value="monday"></label>
+                                    <label><span data-i18n="day_tuesday">Mardi</span><input type="checkbox" value="tuesday"></label>
+                                    <label><span data-i18n="day_wednesday">Mercredi</span><input type="checkbox" value="wednesday"></label>
+                                    <label><span data-i18n="day_thursday">Jeudi</span><input type="checkbox" value="thursday"></label>
+                                </div>
+                                <div class="column">
+                                    <label><span data-i18n="day_friday">Vendredi</span><input type="checkbox" value="friday"></label>
+                                    <label><span data-i18n="day_saturday">Samedi</span><input type="checkbox" value="saturday"></label>
+                                    <label><span data-i18n="day_sunday">Dimanche</span><input type="checkbox" value="sunday"></label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="column">
-                          <label><span data-i18n="day_friday">Vendredi</span><input type="checkbox" value="friday"></label>
-                          <label><span data-i18n="day_saturday">Samedi</span><input type="checkbox" value="saturday"></label>
-                          <label><span data-i18n="day_sunday">Dimanche</span><input type="checkbox" value="sunday"></label>
+
                         </div>
-                      </div>
                     </div>
 
                   <div id="monthly-options" style="display:none; margin-top:10px;">
@@ -7506,10 +9059,24 @@
         </div>
       </div>
     </div>
-    <div id="loading-indicator" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2000; text-align:center;">
-      <div class="spinner"></div>
-      <div data-i18n="loading_recurrence">Calcul des dates récurrentes...</div>
+    <div id="loading-overlay" style="display:none;">
+      <div id="loading-indicator">
+        <div data-i18n="loading_recurrence">
+            Calcul des dates récurrentes... Merci de ne pas interrompre le process !
+        </div>
+
+        <div class="progress-bar-container">
+          <div id="progress-bar" style="width: 0%;"></div>
+        </div>
+
+        <div id="progress-text">0%</div>
+      </div>
     </div>
+
+
+
+
+
 
 
 </body>
