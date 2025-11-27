@@ -3885,6 +3885,7 @@
         }
 
         // === AJOUT: Fonctions d'autocomplétion nom ===
+        // === MODIFICATION: Fonction handleNomSearch pour générer nouveau numéro si client non trouvé ===
         async function handleNomSearch(e) {
             const nom = e.target.value.trim();
 
@@ -3913,11 +3914,100 @@
                 } else {
                     console.log('❌ Aucun client trouvé avec ce nom');
                     hideNomSuggestions();
+
+                    // === NOUVEAU: Générer automatiquement un nouveau numéro ===
+                    await generateNewPhoneNumber();
                 }
 
             } catch (error) {
                 console.error('❌ Erreur recherche client par nom:', error);
                 hideNomSuggestions();
+            }
+        }
+
+        // === NOUVELLE FONCTION: Générer un nouveau numéro de téléphone ===
+        async function generateNewPhoneNumber() {
+            try {
+                console.log('🔢 Génération d\'un nouveau numéro de téléphone...');
+
+                // Récupérer le numéro de téléphone le plus élevé
+                const { data: maxPhoneData, error } = await supabase
+                    .from('tableData1_fran')
+                    .select('Téléphone')
+                    .order('Téléphone', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                let nouveauNumero = 100; // Valeur par défaut si la table est vide
+
+                if (maxPhoneData && maxPhoneData.length > 0) {
+                    const maxPhone = maxPhoneData[0].Téléphone;
+
+                    // Convertir en nombre et ajouter 1
+                    if (maxPhone && !isNaN(maxPhone)) {
+                        nouveauNumero = parseInt(maxPhone) + 1;
+                        console.log(`✅ Dernier numéro trouvé: ${maxPhone}, nouveau numéro: ${nouveauNumero}`);
+                    } else {
+                        console.log('⚠️ Dernier numéro invalide, utilisation de la valeur par défaut');
+                    }
+                } else {
+                    console.log('ℹ️ Aucun numéro existant, utilisation de la valeur par défaut: 100');
+                }
+
+                // Mettre à jour le champ téléphone
+                const telephoneField = document.getElementById('Téléphone');
+                if (telephoneField) {
+                    telephoneField.value = nouveauNumero;
+                    console.log(`✅ Nouveau numéro attribué: ${nouveauNumero}`);
+                }
+
+            } catch (error) {
+                console.error('❌ Erreur lors de la génération du nouveau numéro:', error);
+
+                // Fallback: essayer avec une autre méthode
+                try {
+                    const fallbackNumber = await generateFallbackPhoneNumber();
+                    const telephoneField = document.getElementById('Téléphone');
+                    if (telephoneField) {
+                        telephoneField.value = fallbackNumber;
+                        console.log(`✅ Numéro de fallback attribué: ${fallbackNumber}`);
+                    }
+                } catch (fallbackError) {
+                    console.error('❌ Erreur même avec la méthode de fallback:', fallbackError);
+                }
+            }
+        }
+
+        // === FONCTION FALLBACK: Méthode alternative pour générer un numéro ===
+        async function generateFallbackPhoneNumber() {
+            try {
+                // Méthode alternative: compter tous les enregistrements
+                const { data: allData, error } = await supabase
+                    .from('tableData1_fran')
+                    .select('Téléphone');
+
+                if (error) throw error;
+
+                if (allData && allData.length > 0) {
+                    // Extraire tous les numéros valides et trouver le maximum
+                    const numerosValides = allData
+                        .map(item => item.Téléphone)
+                        .filter(tel => tel && !isNaN(tel))
+                        .map(tel => parseInt(tel));
+
+                    if (numerosValides.length > 0) {
+                        const maxNumero = Math.max(...numerosValides);
+                        return maxNumero + 1;
+                    }
+                }
+
+                // Si tout échoue, retourner une valeur par défaut
+                return 100;
+
+            } catch (error) {
+                console.error('❌ Erreur dans la méthode fallback:', error);
+                return 100; // Valeur par défaut absolue
             }
         }
 
@@ -3984,6 +4074,7 @@
             }
         }
 
+        // === MODIFICATION: Fonction selectClient pour ne pas écraser le téléphone existant ===
         function selectClient(client) {
             console.log('✅ Client sélectionné:', client);
 
@@ -3993,7 +4084,16 @@
             const lieuField = document.getElementById('Lieu');
 
             if (nomField) nomField.value = client.Nom || '';
-            if (telephoneField) telephoneField.value = client.Téléphone || '';
+
+            // NE remplir le téléphone QUE s'il est vide ou s'il contient un numéro auto-généré
+            if (telephoneField) {
+                const currentPhone = telephoneField.value;
+                // Si le champ est vide ou contient un numéro auto-généré (seulement des chiffres), on le remplace
+                if (!currentPhone || /^\d+$/.test(currentPhone)) {
+                    telephoneField.value = client.Téléphone || '';
+                }
+            }
+
             if (lieuField) lieuField.value = client.Lieu || '';
 
             // Mettre à jour les données courantes
