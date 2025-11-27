@@ -5007,9 +5007,9 @@
                       row.dataset.id = event.user_id;
 
                       // Si le champ "Lieu" contient une URL, on la transforme en lien cliquable
-                      const lieuContent = event.Lieu && event.Lieu.match(/https?:\/\/[^\s]+/g)
-                        ? event.Lieu.replace(/https?:\/\/[^\s]+/g, url => `<a href="${url}" target="_blank">${url}</a>`)
-                        : event.Lieu;
+                      const lieuContent = event.Lieu && event.Lieu.includes('http')
+                      ? `<a href="${event.Lieu}" target="_blank" style="color: #0066cc; text-decoration: none;">📍 Voir sur Maps</a>`
+                      : event.Lieu;
 
                       // Définir la valeur de contenteditable en fonction du statut de l'utilisateur
                       const editableAttr = isConfigUser ? 'true' : 'false';
