@@ -5030,7 +5030,7 @@
                         <td contenteditable="${editableAttr}" data-column="Date">${event.Date}</td>
                         <td contenteditable="${editableAttr}" data-column="Heure">${event.Heure}</td>
                         <td contenteditable="${editableAttr}" data-column="Min">${event.Min !== null ? event.Min : ''}</td>
-                        <td contenteditable="${editableAttr}" data-column="Lieu">${lieuContent}</td>
+                        <td contenteditable="${event.Lieu && event.Lieu.includes('http') ? 'false' : editableAttr}" data-column="Lieu">${lieuContent}</td>
                         <td contenteditable="${editableAttr}" data-column="Prix" ${isConfigUser ? '' : 'hidden'}>${event.Prix !== null ? event.Prix : ''}</td>
 
                         <td class="travail-cell" data-column="Travail">
