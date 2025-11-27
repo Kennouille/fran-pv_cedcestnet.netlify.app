@@ -4267,13 +4267,9 @@
             if (lieuEstTransforme) {
                 // Clic simple : ouvrir le lien
                 if (e.detail === 1) {
-                    setTimeout(() => {
-                        if (lieuEstTransforme) {
-                            // Créer le lien Google Maps à la volée avec l'adresse affichée
-                            const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(document.getElementById('Lieu').value)}`;
-                            window.open(lienMaps, '_blank');
-                        }
-                    }, 100);
+                    // Ouvrir IMMÉDIATEMENT Google Maps
+                    const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(document.getElementById('Lieu').value)}`;
+                    window.open(lienMaps, '_blank');
                 }
                 // Double-clic : éditer
                 else if (e.detail === 2) {
@@ -4283,15 +4279,9 @@
             }
         }
 
-        // === AJOUT: Événements pour le champ Lieu ===
+        // === Événements simplifiés ===
         const lieuField = document.getElementById('Lieu');
         lieuField.addEventListener('blur', transformerLieuEnLien);
-        lieuField.addEventListener('mousedown', function(e) {
-            if (lieuEstTransforme && e.detail === 1) {
-                // Bloquer seulement le simple clic, pas le double-clic
-                e.preventDefault();
-            }
-        });
         lieuField.addEventListener('click', handleLieuClick);
 
 
