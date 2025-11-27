@@ -4265,19 +4265,16 @@
 
         function handleLieuClick(e) {
             if (lieuEstTransforme) {
-                // Empêcher le focus immédiat
-                e.preventDefault();
-
                 // Clic simple : ouvrir le lien
-                    if (e.detail === 1) {
-                        setTimeout(() => {
-                            if (lieuEstTransforme) {
-                                // Créer le lien Google Maps à la volée avec l'adresse affichée
-                                const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(document.getElementById('Lieu').value)}`;
-                                window.open(lienMaps, '_blank');
-                            }
-                        }, 100);
-                    }
+                if (e.detail === 1) {
+                    setTimeout(() => {
+                        if (lieuEstTransforme) {
+                            // Créer le lien Google Maps à la volée avec l'adresse affichée
+                            const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(document.getElementById('Lieu').value)}`;
+                            window.open(lienMaps, '_blank');
+                        }
+                    }, 100);
+                }
                 // Double-clic : éditer
                 else if (e.detail === 2) {
                     retransformerLienEnTexte();
