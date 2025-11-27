@@ -3544,6 +3544,15 @@
         // === AJOUT: Événement sur le champ nom ===
         document.getElementById('Nom').addEventListener('input', handleNomSearch);
 
+        // === AJOUT: Fonction pour créer le lien Google Maps ===
+        function createGoogleMapsLink(adresse) {
+            if (!adresse || adresse.trim() === '') return adresse;
+            // Si c'est déjà un lien (contient http ou https), ne rien faire
+            if (adresse.includes('http://') || adresse.includes('https://')) return adresse;
+            // Sinon créer le lien Google Maps
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse.trim())}`;
+        }
+
         document.getElementById('addEventButton').addEventListener('click', async function() {
             // Récupère les valeurs ou assigne null si l'élément est absent ou vide
             const téléphone = document.getElementById('Téléphone') ? document.getElementById('Téléphone').value || null : null;
@@ -3551,7 +3560,8 @@
             const date = document.getElementById('Date') ? document.getElementById('Date').value || null : null;
             const heure = document.getElementById('Heure') ? document.getElementById('Heure').value || null : null;
             const min = document.getElementById('Min') ? document.getElementById('Min').value || null : null;
-            const lieu = document.getElementById('Lieu') ? document.getElementById('Lieu').value || null : null;
+            const lieuBrut = document.getElementById('Lieu') ? document.getElementById('Lieu').value || null : null;
+            const lieu = lieuBrut ? createGoogleMapsLink(lieuBrut) : null;
             const prix = document.getElementById('Prix') ? document.getElementById('Prix').value || null : null;
             const observations = "";
             const nombre_heures = document.getElementById('NombreHeures') ? document.getElementById('NombreHeures').value || null : null;
