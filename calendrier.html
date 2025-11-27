@@ -3553,7 +3553,9 @@
             if (!adresse || adresse.trim() === '') return adresse;
             if (adresse.includes('http://') || adresse.includes('https://')) return adresse;
             if (!/\d/.test(adresse) || !/[a-zA-Z]/.test(adresse)) return adresse;
-            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse.trim())}`;
+
+            // Retourner l'adresse originale MAIS rendre le champ non éditable et stylisé comme un lien
+            return adresse;
         }
 
         document.getElementById('addEventButton').addEventListener('click', async function() {
@@ -4242,13 +4244,13 @@
             const lieuField = document.getElementById('Lieu');
             if (!lieuField || !lieuField.value.trim()) return;
 
-            // Sauvegarder l'original avant transformation
+            // Sauvegarder l'original
             lieuOriginal = lieuField.value;
-            const lien = createGoogleMapsLink(lieuField.value);
 
-            lieuField.value = lien;
+            // Garder l'adresse visible mais la styliser comme un lien
             lieuField.style.color = '#0066cc';
             lieuField.style.textDecoration = 'underline';
+            lieuField.style.cursor = 'pointer';
             lieuField.title = "Cliquer pour ouvrir dans Google Maps - Double-cliquer pour éditer";
             lieuEstTransforme = true;
         }
@@ -4271,13 +4273,15 @@
                 e.preventDefault();
 
                 // Clic simple : ouvrir le lien
-                if (e.detail === 1) {
-                    setTimeout(() => {
-                        if (lieuEstTransforme) {
-                            window.open(document.getElementById('Lieu').value, '_blank');
-                        }
-                    }, 100);
-                }
+                    if (e.detail === 1) {
+                        setTimeout(() => {
+                            if (lieuEstTransforme) {
+                                // Créer le lien Google Maps à la volée avec l'adresse affichée
+                                const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(document.getElementById('Lieu').value)}`;
+                                window.open(lienMaps, '_blank');
+                            }
+                        }, 100);
+                    }
                 // Double-clic : éditer
                 else if (e.detail === 2) {
                     retransformerLienEnTexte();
