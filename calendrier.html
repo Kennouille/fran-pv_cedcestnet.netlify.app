@@ -3535,8 +3535,14 @@
         let currentClientLieux = [];
         let currentClientData = null;
 
+        // === AJOUT: Variables pour autocomplétion nom ===
+        let currentClientNames = [];
+
         // === AJOUT: Événement sur le champ téléphone ===
         document.getElementById('Téléphone').addEventListener('input', handleTelephoneSearch);
+
+        // === AJOUT: Événement sur le champ nom ===
+        document.getElementById('Nom').addEventListener('input', handleNomSearch);
 
         document.getElementById('addEventButton').addEventListener('click', async function() {
             // Récupère les valeurs ou assigne null si l'élément est absent ou vide
@@ -3878,6 +3884,171 @@
             }
         }
 
+        // === AJOUT: Fonctions d'autocomplétion nom ===
+        async function handleNomSearch(e) {
+            const nom = e.target.value.trim();
+
+            if (nom.length < 2) {
+                currentClientNames = [];
+                hideNomSuggestions();
+                return;
+            }
+
+            try {
+                console.log('🔍 Recherche client avec nom:', nom);
+
+                const { data: clients, error } = await supabase
+                    .from('tableData1_fran')
+                    .select('Téléphone, Nom, Lieu, Ajouté_pour')
+                    .ilike('Nom', `%${nom}%`)
+                    .order('Date', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (clients && clients.length > 0) {
+                    console.log('✅ Clients trouvés:', clients);
+                    currentClientNames = clients;
+                    showNomSuggestions(clients);
+                } else {
+                    console.log('❌ Aucun client trouvé avec ce nom');
+                    hideNomSuggestions();
+                }
+
+            } catch (error) {
+                console.error('❌ Erreur recherche client par nom:', error);
+                hideNomSuggestions();
+            }
+        }
+
+        function showNomSuggestions(clients) {
+            hideNomSuggestions(); // Supprimer les suggestions précédentes
+
+            const suggestionsContainer = document.createElement('div');
+            suggestionsContainer.id = 'nomSuggestions';
+            suggestionsContainer.style.cssText = `
+                position: absolute;
+                background: white;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 1000;
+                width: 100%;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            `;
+
+            clients.forEach(client => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.style.cssText = `
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #f0f0f0;
+                `;
+                suggestionItem.innerHTML = `
+                    <div style="font-weight: bold;">${client.Nom || 'Non renseigné'}</div>
+                    <div style="font-size: 0.8em; color: #666;">
+                        📞 ${client.Téléphone || 'Non renseigné'} | 📍 ${client.Lieu || 'Non renseigné'}
+                    </div>
+                `;
+
+                suggestionItem.addEventListener('click', () => {
+                    selectClient(client);
+                });
+
+                suggestionItem.addEventListener('mouseenter', () => {
+                    suggestionItem.style.backgroundColor = '#f5f5f5';
+                });
+
+                suggestionItem.addEventListener('mouseleave', () => {
+                    suggestionItem.style.backgroundColor = 'white';
+                });
+
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+
+            const nomField = document.getElementById('Nom');
+            nomField.parentNode.style.position = 'relative';
+            nomField.parentNode.appendChild(suggestionsContainer);
+
+            // Positionner le container sous le champ
+            const rect = nomField.getBoundingClientRect();
+            suggestionsContainer.style.top = `${rect.height}px`;
+            suggestionsContainer.style.left = '0px';
+        }
+
+        function hideNomSuggestions() {
+            const existingSuggestions = document.getElementById('nomSuggestions');
+            if (existingSuggestions) {
+                existingSuggestions.remove();
+            }
+        }
+
+        function selectClient(client) {
+            console.log('✅ Client sélectionné:', client);
+
+            // Remplir les champs avec les données du client
+            const nomField = document.getElementById('Nom');
+            const telephoneField = document.getElementById('Téléphone');
+            const lieuField = document.getElementById('Lieu');
+
+            if (nomField) nomField.value = client.Nom || '';
+            if (telephoneField) telephoneField.value = client.Téléphone || '';
+            if (lieuField) lieuField.value = client.Lieu || '';
+
+            // Mettre à jour les données courantes
+            currentClientData = client;
+
+            // Cacher les suggestions
+            hideNomSuggestions();
+
+            console.log('✅ Champs remplis automatiquement');
+        }
+
+        // Cacher les suggestions quand on clique ailleurs
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#Nom') && !e.target.closest('#nomSuggestions')) {
+                hideNomSuggestions();
+            }
+        });
+
+        // Gérer la navigation au clavier dans les suggestions
+        document.getElementById('Nom').addEventListener('keydown', function(e) {
+            const suggestions = document.getElementById('nomSuggestions');
+            if (!suggestions) return;
+
+            const items = suggestions.querySelectorAll('div');
+            let currentIndex = -1;
+
+            items.forEach((item, index) => {
+                if (item.style.backgroundColor === 'rgb(245, 245, 245)') {
+                    currentIndex = index;
+                }
+            });
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                highlightSuggestion(items, nextIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                highlightSuggestion(items, prevIndex);
+            } else if (e.key === 'Enter' && currentIndex !== -1) {
+                e.preventDefault();
+                items[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                hideNomSuggestions();
+            }
+        });
+
+        function highlightSuggestion(items, index) {
+            items.forEach(item => item.style.backgroundColor = 'white');
+            items[index].style.backgroundColor = '#f5f5f5';
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+
+        // === VOTRE CODE EXISTANT POUR updateLieuField ===
         function updateLieuField(lieux) {
             const lieuField = document.getElementById('Lieu');
             if (!lieuField) return;
@@ -3905,9 +4076,10 @@
             }
         }
 
+        // === MODIFICATION: Mettre à jour resetClientFields pour gérer aussi le nom ===
         function resetClientFields() {
             if (document.getElementById('Nom')) document.getElementById('Nom').value = '';
-            // Pas de Interlocuteur ni Fonction à réinitialiser
+            if (document.getElementById('Téléphone')) document.getElementById('Téléphone').value = '';
 
             const lieuField = document.getElementById('Lieu');
             if (lieuField) {
@@ -3917,15 +4089,30 @@
             }
 
             currentClientLieux = [];
+            currentClientNames = [];
             currentClientData = null;
 
             const existingDatalist = document.getElementById('lieuxOptions');
             if (existingDatalist) existingDatalist.remove();
+
+            hideNomSuggestions();
         }
 
+        // === VOTRE CODE EXISTANT POUR les événements change ===
         document.getElementById('Téléphone').addEventListener('change', function(e) {
             if (e.target.value.trim() === '') {
                 resetClientFields();
+            }
+        });
+
+        // === AJOUT: Événement sur le changement de nom pour reset si vide ===
+        document.getElementById('Nom').addEventListener('change', function(e) {
+            if (e.target.value.trim() === '') {
+                // Ne reset que partiellement pour garder la cohérence
+                const telephoneField = document.getElementById('Téléphone');
+                if (telephoneField && telephoneField.value.trim() === '') {
+                    resetClientFields();
+                }
             }
         });
 
