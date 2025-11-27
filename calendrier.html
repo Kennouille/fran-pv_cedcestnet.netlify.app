@@ -4287,7 +4287,8 @@
         const lieuField = document.getElementById('Lieu');
         lieuField.addEventListener('blur', transformerLieuEnLien);
         lieuField.addEventListener('mousedown', function(e) {
-            if (lieuEstTransforme) {
+            if (lieuEstTransforme && e.detail === 1) {
+                // Bloquer seulement le simple clic, pas le double-clic
                 e.preventDefault();
             }
         });
