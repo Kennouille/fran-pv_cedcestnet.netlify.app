@@ -3553,9 +3553,7 @@
             if (!adresse || adresse.trim() === '') return adresse;
             if (adresse.includes('http://') || adresse.includes('https://')) return adresse;
             if (!/\d/.test(adresse) || !/[a-zA-Z]/.test(adresse)) return adresse;
-
-            // Retourner l'adresse originale MAIS rendre le champ non éditable et stylisé comme un lien
-            return adresse;
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse.trim())}`;
         }
 
         document.getElementById('addEventButton').addEventListener('click', async function() {
@@ -3566,9 +3564,8 @@
             const heure = document.getElementById('Heure') ? document.getElementById('Heure').value || null : null;
             const min = document.getElementById('Min') ? document.getElementById('Min').value || null : null;
             let lieu = document.getElementById('Lieu') ? document.getElementById('Lieu').value || null : null;
-            // Si le lieu n'est pas encore transformé mais contient une adresse, le transformer
             if (lieu && !lieu.includes('http') && lieu.trim() !== '') {
-                lieu = createGoogleMapsLink(lieu);
+                lieu = createGoogleMapsLink(lieu); // ← GARDEZ cette ligne importante !
             }
             const prix = document.getElementById('Prix') ? document.getElementById('Prix').value || null : null;
             const observations = "";
@@ -4244,10 +4241,10 @@
             const lieuField = document.getElementById('Lieu');
             if (!lieuField || !lieuField.value.trim()) return;
 
-            // Sauvegarder l'original
+            // Sauvegarder l'original avant transformation
             lieuOriginal = lieuField.value;
 
-            // Garder l'adresse visible mais la styliser comme un lien
+            // Garder l'adresse visible MAIS marquer comme transformée
             lieuField.style.color = '#0066cc';
             lieuField.style.textDecoration = 'underline';
             lieuField.style.cursor = 'pointer';
@@ -4259,10 +4256,9 @@
             const lieuField = document.getElementById('Lieu');
             if (!lieuField || !lieuEstTransforme) return;
 
-            // Restaurer l'adresse originale
-            lieuField.value = lieuOriginal;
             lieuField.style.color = '';
             lieuField.style.textDecoration = '';
+            lieuField.style.cursor = '';
             lieuField.title = "";
             lieuEstTransforme = false;
         }
