@@ -4268,18 +4268,34 @@
 
         function handleLieuClick(e) {
             if (lieuEstTransforme) {
-                // Double-clic pour éditer un lien
-                if (e.detail === 2) {
+                // Empêcher le focus immédiat
+                e.preventDefault();
+
+                // Clic simple : ouvrir le lien
+                if (e.detail === 1) {
+                    setTimeout(() => {
+                        if (lieuEstTransforme) {
+                            window.open(document.getElementById('Lieu').value, '_blank');
+                        }
+                    }, 100);
+                }
+                // Double-clic : éditer
+                else if (e.detail === 2) {
                     retransformerLienEnTexte();
-                    lieuField.select();
+                    document.getElementById('Lieu').select();
                 }
             }
         }
 
         // === AJOUT: Événements pour le champ Lieu ===
-        document.getElementById('Lieu').addEventListener('blur', transformerLieuEnLien);
-        document.getElementById('Lieu').addEventListener('focus', retransformerLienEnTexte);
-        document.getElementById('Lieu').addEventListener('click', handleLieuClick);
+        const lieuField = document.getElementById('Lieu');
+        lieuField.addEventListener('blur', transformerLieuEnLien);
+        lieuField.addEventListener('mousedown', function(e) {
+            if (lieuEstTransforme) {
+                e.preventDefault();
+            }
+        });
+        lieuField.addEventListener('click', handleLieuClick);
 
 
             let isCalendarGenerated = false;
