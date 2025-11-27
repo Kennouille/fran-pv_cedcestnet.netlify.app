@@ -153,7 +153,11 @@
         const progressBar = document.getElementById("progress-bar");
         const progressText = document.getElementById("progress-text");
 
-
+        // === GÉRER LA VISIBILITÉ DU BOUTON RDV ===
+        const addRdvBtn = document.getElementById('addRdvBtn');
+        if (addRdvBtn) {
+            addRdvBtn.style.display = isConfigUser ? '' : 'none';
+        }
 
         // =======================================================
         // UTILITAIRES DE SYNCHRONISATION ET HORS LIGNE
