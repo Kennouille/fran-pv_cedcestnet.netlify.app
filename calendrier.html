@@ -5079,7 +5079,7 @@
                       row.innerHTML = `
                         <td contenteditable="false"
                             data-column="Téléphone"
-                            ${isConfigUser ? '' : 'hidden'}>
+
                             ${event.Téléphone !== null ? event.Téléphone : ''}
 
                         </td>
@@ -8927,68 +8927,6 @@
             }, 500);
         }
 
-
-        // === FONCTION DE MIGRATION - À AJOUTER À LA FIN DE VOTRE FICHIER ===
-        async function migrateLieuToGoogleMaps() {
-            if (!confirm('🚨 MIGRATION DES ADRESSES\n\nVoulez-vous transformer toutes les adresses en liens Google Maps ?\n\nCette action est irréversible !')) {
-                return;
-            }
-
-            console.log('🔄 Début de la migration des adresses...');
-
-            const { data: records, error } = await supabase
-                .from('tableData1_fran')
-                .select('Téléphone, Lieu')
-                .not('Lieu', 'is', null)
-                .not('Lieu', 'eq', '')
-                .not('Lieu', 'ilike', 'https://www.google.com/maps/%')
-                .not('Lieu', 'ilike', 'http%://%');
-
-            if (error) {
-                console.error('❌ Erreur de récupération:', error);
-                alert('❌ Erreur: ' + error.message);
-                return;
-            }
-
-            console.log(`📊 ${records.length} adresses à migrer`);
-
-            if (records.length === 0) {
-                alert('✅ Aucune adresse à migrer !');
-                return;
-            }
-
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (const record of records) {
-                try {
-                    const lienMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(record.Lieu)}`;
-
-                    const { error: updateError } = await supabase
-                        .from('tableData1_fran')
-                        .update({ Lieu: lienMaps })
-                        .eq('Téléphone', record.Téléphone);
-
-                    if (updateError) {
-                        console.error('❌ Erreur pour', record.Téléphone, ':', updateError);
-                        errorCount++;
-                    } else {
-                        successCount++;
-                        console.log(`✅ ${successCount}/${records.length} - ${record.Lieu.substring(0, 30)}...`);
-                    }
-                } catch (err) {
-                    console.error('❌ Erreur traitement:', err);
-                    errorCount++;
-                }
-
-                // Pause pour ne pas surcharger
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
-            const message = `🎉 Migration terminée : ${successCount} réussites, ${errorCount} erreurs`;
-            console.log(message);
-            alert(message);
-        }
 
     </script>
 </head>
