@@ -3547,9 +3547,14 @@
         // === AJOUT: Fonction pour créer le lien Google Maps ===
         function createGoogleMapsLink(adresse) {
             if (!adresse || adresse.trim() === '') return adresse;
-            // Si c'est déjà un lien (contient http ou https), ne rien faire
+
+            // Si c'est déjà un lien, ne rien faire
             if (adresse.includes('http://') || adresse.includes('https://')) return adresse;
-            // Sinon créer le lien Google Maps
+
+            // Vérifier si c'est une adresse valide (contient au moins un chiffre et une lettre)
+            if (!/\d/.test(adresse) || !/[a-zA-Z]/.test(adresse)) return adresse;
+
+            // Créer le lien Google Maps avec le format exact
             return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse.trim())}`;
         }
 
@@ -3576,6 +3581,12 @@
 
             // Récupération de la valeur de la case à cocher pour les photos obligatoires
             const obligation_photo = document.getElementById('obligationPhotoCheckbox') ? document.getElementById('obligationPhotoCheckbox').checked : false;
+
+            // === AJOUT: Vérification temporaire ===
+            console.log('=== TRANSFORMATION LIEU ===');
+            console.log('Lieu brut:', lieuBrut);
+            console.log('Lieu transformé:', lieu);
+            console.log('Est un lien?:', lieu && lieu.includes('http'));
 
             // 🔹 Récupération des infos de récurrence
             let recurrence_rule = null;
