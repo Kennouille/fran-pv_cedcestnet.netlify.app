@@ -1918,9 +1918,9 @@ td[data-column="Observations"] {
     /* ========================================= */
 
     .weekly-view-container {
-        width: 130%;
+        width: 300%;
         height: calc(100vh - 100px);
-        min-height: 1000px;
+        min-height: 800px;
         margin: 10px auto;
         border-radius: 8px;
     }
