@@ -65,6 +65,11 @@ async function initializeEmployeeStats() {
             employeeSelect.value = currentUser;
             // Optionnel : désactiver la sélection
             employeeSelect.disabled = true;
+
+            // Déclencher automatiquement le calcul
+            setTimeout(() => {
+                calculateEmployeeStats();
+            }, 500); // Petit délai pour s'assurer que tout est chargé
         }
     }
 }
@@ -143,7 +148,9 @@ async function loadEmployees() {
 // Initialiser le sélecteur d'année
 function initializeYearSelect() {
     const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
     const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1; // Les mois vont de 0 à 11
 
     for (let year = currentYear - 5; year <= currentYear + 1; year++) {
         const option = document.createElement('option');
@@ -153,6 +160,11 @@ function initializeYearSelect() {
             option.selected = true;
         }
         yearSelect.appendChild(option);
+    }
+
+    // Sélectionner automatiquement le mois en cours
+    if (monthSelect) {
+        monthSelect.value = currentMonth.toString();
     }
 }
 
