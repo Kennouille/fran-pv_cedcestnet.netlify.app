@@ -1920,7 +1920,7 @@ td[data-column="Observations"] {
     .weekly-view-container {
         width: 95%;
         height: calc(100vh - 100px);
-        min-height: 400px;
+        min-height: 1000px;
         margin: 10px auto;
         border-radius: 8px;
     }
