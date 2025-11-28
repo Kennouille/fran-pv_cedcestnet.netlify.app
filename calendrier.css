@@ -1902,6 +1902,340 @@ td[data-column="Observations"] {
     color: #e6f3ff;
 }
 
+/* ========================================= */
+/* === RESPONSIVE SMARTPHONE === */
+/* ========================================= */
+
+@media screen and (max-width: 768px) {
+
+    /* ESPACE UNIQUEMENT QUAND LA VUE HEBDOMADAIRE EST ACTIVE - MOBILE */
+    .weekly-view-container[style*="display: block"] {
+        margin-top: 20px;
+    }
+
+    /* ========================================= */
+    /* === CONTENEUR GLOBAL MOBILE === */
+    /* ========================================= */
+
+    .weekly-view-container {
+        width: 95%;
+        height: calc(100vh - 100px);
+        min-height: 400px;
+        margin: 10px auto;
+        border-radius: 8px;
+    }
+
+    /* ========================================= */
+    /* === EN-TÊTE AVEC BOUTONS - MOBILE === */
+    /* ========================================= */
+
+    .weekly-header {
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .weekly-header h2 {
+        font-size: 1.1em;
+        text-align: center;
+        order: 1;
+    }
+
+    .week-nav-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        width: 100%;
+        margin: 2px 0;
+    }
+
+    /* Réorganiser l'ordre des boutons */
+    #prevWeekBtn {
+        order: 2;
+    }
+
+    #todayWeekBtn {
+        order: 3;
+    }
+
+    #nextWeekBtn {
+        order: 4;
+    }
+
+    /* ========================================= */
+    /* === CONTENEUR DE LA GRILLE - MOBILE === */
+    /* ========================================= */
+
+    .weekly-grid-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Scroll fluide sur iOS */
+    }
+
+    /* ========================================= */
+    /* === GRILLE PRINCIPALE - MOBILE === */
+    /* ========================================= */
+
+    .weekly-grid {
+        grid-template-columns: 50px repeat(7, 120px); /* Colonnes plus étroites mais scroll horizontal */
+        grid-auto-rows: 40px;
+        min-width: 900px; /* Largeur minimale pour forcer le scroll horizontal */
+        min-height: 600px;
+        row-gap: 1px;
+        column-gap: 1px;
+        border: 2px solid #dee2e6;
+    }
+
+    /* ========================================= */
+    /* === COIN SUPÉRIEUR GAUCHE - MOBILE === */
+    /* ========================================= */
+
+    .grid-corner {
+        border-right: 2px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    /* ========================================= */
+    /* === EN-TÊTES DES JOURS - MOBILE === */
+    /* ========================================= */
+
+    .day-header {
+        border-right: 2px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+        padding: 5px 3px;
+        min-width: 120px;
+    }
+
+    .day-header:last-child {
+        border-right: 2px solid #dee2e6;
+    }
+
+    .day-name {
+        font-size: 11px;
+    }
+
+    .day-date {
+        font-size: 10px;
+    }
+
+    /* ========================================= */
+    /* === COLONNE DES HEURES - MOBILE === */
+    /* ========================================= */
+
+    .time-label {
+        border-right: 2px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+        padding: 3px;
+        font-size: 10px;
+        height: 40px;
+        min-width: 50px;
+    }
+
+    .time-label:last-child {
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    /* ========================================= */
+    /* === CELLULES DE LA GRILLE - MOBILE === */
+    /* ========================================= */
+
+    .day-slot {
+        border-right: 2px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+        padding: 2px;
+        min-height: 40px;
+        min-width: 120px;
+    }
+
+    /* ========================================= */
+    /* === ÉVÉNEMENTS DANS LES CELLULES - MOBILE === */
+    /* ========================================= */
+
+    .slot-event {
+        padding: 3px 4px;
+        margin-bottom: 2px;
+        font-size: 9px;
+        gap: 3px;
+        border-width: 2px;
+        border-left-width: 4px;
+    }
+
+    .event-picto {
+        font-size: 12px !important;
+        min-width: 16px !important;
+    }
+
+    .event-time {
+        font-size: 8px;
+    }
+
+    .event-client {
+        font-size: 9px;
+    }
+
+    /* ========================================= */
+    /* === NOTES DANS LES CELLULES - MOBILE === */
+    /* ========================================= */
+
+    .slot-note {
+        padding: 3px 4px;
+        font-size: 8px;
+        margin-top: 2px;
+        border-width: 2px;
+    }
+
+    /* ========================================= */
+    /* === LIGNE DU TEMPS ACTUEL - MOBILE === */
+    /* ========================================= */
+
+    .current-time-line {
+        left: 50px; /* Ajusté à la largeur mobile */
+        height: 3px;
+    }
+
+    .current-time-line::before {
+        left: -4px;
+        top: -2px;
+        width: 6px;
+        height: 6px;
+    }
+
+    /* ========================================= */
+    /* === POPUP DES SLOTS - MOBILE === */
+    /* ========================================= */
+
+    .weekly-popup-content {
+        min-width: 90%;
+        max-width: 95%;
+        margin: 20px;
+        padding: 15px;
+    }
+
+    .popup-btn {
+        padding: 12px;
+        font-size: 14px;
+        margin: 6px 0;
+    }
+
+    /* ========================================= */
+    /* === POPUP RECHERCHE CLIENTS - MOBILE === */
+    /* ========================================= */
+
+    .client-result-item {
+        padding: 8px;
+        margin: 3px 0;
+    }
+
+    .client-info {
+        font-size: 11px;
+    }
+}
+
+/* ========================================= */
+/* === TRÈS PETITS ÉCRANS (iPhone SE etc.) === */
+/* ========================================= */
+
+@media screen and (max-width: 375px) {
+    .weekly-view-container {
+        width: 98%;
+        height: calc(100vh - 80px);
+    }
+
+    .weekly-header h2 {
+        font-size: 1em;
+    }
+
+    .week-nav-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .weekly-grid {
+        grid-template-columns: 45px repeat(7, 100px);
+        grid-auto-rows: 35px;
+        min-width: 800px;
+    }
+
+    .time-label {
+        font-size: 9px;
+        height: 35px;
+        min-width: 45px;
+    }
+
+    .day-header {
+        min-width: 100px;
+        padding: 3px 2px;
+    }
+
+    .day-slot {
+        min-width: 100px;
+        min-height: 35px;
+    }
+
+    .slot-event {
+        font-size: 8px;
+        padding: 2px 3px;
+    }
+
+    .event-picto {
+        font-size: 10px !important;
+    }
+}
+
+/* ========================================= */
+/* === ORIENTATION PAYSAGE - MOBILE === */
+/* ========================================= */
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .weekly-view-container {
+        height: calc(100vh - 80px);
+    }
+
+    .weekly-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 8px;
+    }
+
+    .weekly-header h2 {
+        width: 100%;
+        order: 1;
+        margin-bottom: 5px;
+    }
+
+    .week-nav-btn {
+        width: auto;
+        flex: 1;
+        margin: 0 2px;
+        padding: 6px 8px;
+    }
+
+    #prevWeekBtn { order: 2; }
+    #todayWeekBtn { order: 3; }
+    #nextWeekBtn { order: 4; }
+}
+
+/* ========================================= */
+/* === AMÉLIORATIONS TOUCH SCREEN === */
+/* ========================================= */
+
+@media (hover: none) and (pointer: coarse) {
+    .week-nav-btn,
+    .slot-event,
+    .slot-note {
+        min-height: 44px; /* Taille minimale pour les doigts */
+    }
+
+    .day-slot {
+        cursor: default;
+    }
+
+    .slot-event:active,
+    .slot-note:active {
+        background: #b8d4d4;
+        transform: scale(0.98);
+    }
+}
+
 /* STYLE UNIQUEMENT POUR LES BOUTONS DE NAVIGATION PRINCIPALE */
 #homeButton,
 #statsButton,
