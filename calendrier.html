@@ -8142,7 +8142,10 @@
 
             const eventElement = document.createElement('div');
             eventElement.className = 'slot-event';
-            eventElement.draggable = true;
+
+            // Draggable uniquement pour les configurateurs
+            eventElement.draggable = isConfigUser();
+
             eventElement.dataset.eventId = event.user_id;
 
             // Couleur selon l'employé
@@ -8169,11 +8172,13 @@
                 openEventDetails(event);
             });
 
-            eventElement.addEventListener('dragstart', handleDragStart);
+            // Ajouter l'événement dragstart uniquement si draggable
+            if (isConfigUser()) {
+                eventElement.addEventListener('dragstart', handleDragStart);
+            }
 
             return eventElement;
         }
-
         function getPictoForTravail(travail) {
             console.log('🔧 getPictoForTravail appelé avec:', travail);
 
