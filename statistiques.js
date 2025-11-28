@@ -78,8 +78,12 @@ function initializeUserPermissions() {
 
     // Masquer les statistiques générales si pas configurateur
     const generalStatsSection = document.getElementById('generalStatsSection');
+    const generalStatsResults = document.getElementById('generalStatsResults');
     if (generalStatsSection) {
         generalStatsSection.style.display = isConfig ? 'block' : 'none';
+    }
+    if (generalStatsResults) {
+        generalStatsResults.style.display = isConfig ? 'block' : 'none';
     }
 
     // Ajuster le titre si nécessaire
