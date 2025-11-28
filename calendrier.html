@@ -344,6 +344,12 @@
             const userName = localStorage.getItem('currentPersonName');
             const isConfigUser = localStorage.getItem('currentPersonIsConfigUser') === 'true';
 
+            // Vérifier si l'utilisateur a les droits d'accès
+            if (!isConfigUser) {
+                alert("⛔ Accès refusé : Vous n'avez pas les droits nécessaires pour accéder à cette page.");
+                return; // Empêcher la redirection
+            }
+
             // Passer les paramètres dans l'URL
             const params = new URLSearchParams({
                 user: userName || '',
