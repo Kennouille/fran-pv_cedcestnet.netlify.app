@@ -1918,7 +1918,7 @@ td[data-column="Observations"] {
     /* ========================================= */
 
     .weekly-view-container {
-        width: 300%;
+        width: 250%;
         height: calc(100vh - 100px);
         min-height: 800px;
         margin: 10px auto;
