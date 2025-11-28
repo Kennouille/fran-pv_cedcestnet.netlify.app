@@ -15,8 +15,8 @@
         <h1>Statistiques</h1>
 
         <!-- Nouvelle section pour les statistiques employés -->
-        <div class="employee-stats">
-            <h2>Statistiques Employés</h2>
+        <div class="employee-stats" id="employeeStatsSection">
+            <h2 id="employeeStatsTitle">Statistiques Employés</h2>
             <div class="employee-selection">
                 <div class="select-group">
                     <label for="yearSelect">Année :</label>
@@ -56,7 +56,8 @@
             </div>
         </div>
 
-        <div class="date-selection">
+        <!-- Section des statistiques générales - avec ID pour pouvoir la masquer -->
+        <div class="date-selection" id="generalStatsSection">
             <h2>Statistiques Générales</h2>
             <label for="startDate">Date de début :</label>
             <input type="date" id="startDate">
@@ -76,7 +77,7 @@
         </div>
 
         <!-- Display Statistics Results -->
-        <div class="stats-results">
+        <div class="stats-results" id="generalStatsResults">
             <h2>Résultats :</h2>
 
             <!-- Indicateur de chargement -->
@@ -120,6 +121,8 @@
             <h1>Rapport Statistiques</h1>
             <div id="pdfContent"></div>
         </div>
+
+    </div>
 
     <!-- Scripts -->
     <script type="module" src="statistiques.js"></script>

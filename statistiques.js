@@ -6,6 +6,19 @@ let eventsByPersonChartInstance = null;
 let topClientsChartInstance = null;
 let eventsByDayOfWeekChartInstance = null;
 
+// Fonction pour vérifier si l'utilisateur est configurateur
+function isConfigUser() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isConfig = urlParams.get('isConfig');
+    return isConfig === 'true';
+}
+
+// Fonction pour récupérer le nom de l'utilisateur connecté
+function getCurrentUserName() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('user') || '';
+}
+
 // Structure pour l'export
 let exportableStats = {
     period: { startDate: '', endDate: '' },
@@ -22,6 +35,11 @@ let exportableStats = {
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎯 DOMContentLoaded - Début initialisation');
+
+    // Initialiser les droits utilisateur en premier
+    initializeUserPermissions();
+
+    // Puis initialiser les stats employés
     initializeEmployeeStats();
 
     if (document.getElementById('startDate') && document.getElementById('endDate')) {
@@ -37,6 +55,46 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeEmployeeStats() {
     await loadEmployees();
     initializeYearSelect();
+
+    // Si l'utilisateur n'est pas configurateur, pré-remplir avec son nom
+    if (!isConfigUser()) {
+        const currentUser = getCurrentUserName();
+        const employeeSelect = document.getElementById('employeeSelect');
+
+        if (currentUser && employeeSelect) {
+            employeeSelect.value = currentUser;
+            // Optionnel : désactiver la sélection
+            employeeSelect.disabled = true;
+        }
+    }
+}
+
+// Fonction pour gérer l'affichage selon les droits utilisateur
+function initializeUserPermissions() {
+    const isConfig = isConfigUser();
+    const currentUser = getCurrentUserName();
+
+    console.log('👤 Utilisateur:', currentUser, 'isConfig:', isConfig);
+
+    // Masquer les statistiques générales si pas configurateur
+    const generalStatsSection = document.getElementById('generalStatsSection');
+    if (generalStatsSection) {
+        generalStatsSection.style.display = isConfig ? 'block' : 'none';
+    }
+
+    // Ajuster le titre si nécessaire
+    if (!isConfig && currentUser) {
+        const employeeStatsTitle = document.querySelector('#employeeStatsSection h2');
+        if (employeeStatsTitle) {
+            employeeStatsTitle.textContent = `👤 Mes Statistiques - ${currentUser}`;
+        }
+
+        // Masquer aussi les boutons d'export général si nécessaire
+        const generalExportButtons = document.querySelectorAll('button[onclick*="exportGeneralStatsToPdf"], button[onclick*="exportDataToCsv"]');
+        generalExportButtons.forEach(button => {
+            button.style.display = 'none';
+        });
+    }
 }
 
 // Charger la liste des employés
@@ -55,12 +113,27 @@ async function loadEmployees() {
     const employeeSelect = document.getElementById('employeeSelect');
     employeeSelect.innerHTML = '<option value="">Sélectionner un employé</option>';
 
-    data.forEach(employee => {
-        const option = document.createElement('option');
-        option.value = employee.Nom;
-        option.textContent = employee.Nom;
-        employeeSelect.appendChild(option);
-    });
+    // Si l'utilisateur n'est pas configurateur, n'afficher que son nom
+    if (!isConfigUser()) {
+        const currentUser = getCurrentUserName();
+        if (currentUser) {
+            const option = document.createElement('option');
+            option.value = currentUser;
+            option.textContent = currentUser;
+            option.selected = true;
+            employeeSelect.appendChild(option);
+        }
+        // Optionnel : désactiver la sélection
+        employeeSelect.disabled = true;
+    } else {
+        // Si configurateur, afficher tous les employés
+        data.forEach(employee => {
+            const option = document.createElement('option');
+            option.value = employee.Nom;
+            option.textContent = employee.Nom;
+            employeeSelect.appendChild(option);
+        });
+    }
 }
 
 // Initialiser le sélecteur d'année
