@@ -7908,6 +7908,21 @@
 
         let currentWeekStart = null;
 
+        // Fonction pour vérifier si l'utilisateur est configurateur
+        function isConfigUser() {
+            // Vérifiez d'abord dans l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlIsConfig = urlParams.get('isConfig');
+
+            if (urlIsConfig !== null) {
+                return urlIsConfig === 'true';
+            }
+
+            // Sinon vérifiez dans le localStorage
+            const localIsConfig = localStorage.getItem('currentPersonIsConfigUser');
+            return localIsConfig === 'true';
+        }
+
         async function loadWeeklyView() {
             console.log('🔄 loadWeeklyView démarré');
 
