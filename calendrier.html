@@ -182,33 +182,25 @@
         async function addToQueue(operation) {
             console.log(`[IDB/Queue] Tentative d'ajout à la file d'attente:`, operation);
 
-            // ===== AJOUTEZ CES LIGNES POUR LE DEBUG =====
-            console.log('🔍 DEBUG addToQueue - Inspection du payload:');
-            console.log('Operation type:', operation.type);
-            console.log('Target table:', operation.targetTable);
-            console.log('Target ID:', operation.targetId);
-
-            if (operation.payload) {
-                console.log('Payload keys:', Object.keys(operation.payload));
-                console.log('Payload values:', operation.payload);
-
-                // Vérification spécifique pour Téléphone
-                if (operation.payload.Téléphone !== undefined) {
-                    console.log('⚠️ ATTENTION: Téléphone trouvé dans payload avec valeur:', operation.payload.Téléphone);
-                    console.log('Type de Téléphone:', typeof operation.payload.Téléphone);
-                }
-
-                if (operation.payload.Téléphone === null) {
-                    console.log('🚨 PROBLÈME: Téléphone est null dans le payload!');
-
-                    // Option: supprimer Téléphone:null du payload avant de stocker
-                    const { Téléphone, ...cleanPayload } = operation.payload;
-                    operation.payload = cleanPayload;
-                    console.log('✅ Téléphone null retiré du payload avant stockage');
-                }
+            // === CORRECTION UNIQUE - DÉBUT ===
+            // 1. Supprimer Téléphone:null de tous les payloads
+            if (operation.payload && operation.payload.Téléphone === null) {
+                console.log('🛠️ Suppression Téléphone:null du payload');
+                delete operation.payload.Téléphone;
             }
-            console.log('================================');
-            // ===== FIN DU DEBUG =====
+
+            // 2. Ignorer les opérations avec payload vide après nettoyage
+            if (operation.payload && Object.keys(operation.payload).length === 0) {
+                console.log('⚠️ Payload vide après nettoyage, opération ignorée');
+                return;
+            }
+
+            // 3. Ignorer les opérations avec targetId.Téléphone vide
+            if (operation.targetId && operation.targetId.Téléphone === '') {
+                console.log('⚠️ TargetId.Téléphone vide, opération ignorée');
+                return;
+            }
+            // === CORRECTION UNIQUE - FIN ===
 
             // --- Début de la SIMULATION (Remplacez par IndexedDB en production) ---
             try {
