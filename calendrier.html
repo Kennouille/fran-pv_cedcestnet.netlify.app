@@ -275,6 +275,14 @@
 
                         // Extraction des paramètres de la requête
                         const { targetTable, targetId, payload } = operation;
+                        console.log('=== DEBUG SYNC: Operation payload ===');
+                        console.log('Table cible:', targetTable);
+                        console.log('ID cible:', targetId);
+                        console.log('Payload complet:', JSON.stringify(payload, null, 2));
+                        console.log('Clé "Téléphone" existe dans payload?', 'Téléphone' in payload);
+                        console.log('Clé "Num. Client" existe dans payload?', 'Num. Client' in payload);
+                        console.log('==============================');
+
                         const targetKeys = Object.keys(targetId);
 
                         if (targetKeys.length === 0) {
@@ -3567,6 +3575,15 @@
         }
 
         document.getElementById('addEventButton').addEventListener('click', async function() {
+            // ============ AJOUTEZ CE LOG AU DÉBUT ============
+            console.log('=== DEBUG: Vérification des champs du formulaire ===');
+            const telephoneElement = document.getElementById('Téléphone');
+            console.log('Élément téléphone trouvé:', !!telephoneElement);
+            console.log('ID de l\'élément:', telephoneElement?.id);
+            console.log('Valeur du champ téléphone:', telephoneElement?.value);
+            console.log('==============================');
+            // ================================================
+
             // Récupère les valeurs ou assigne null si l'élément est absent ou vide
             const téléphone = document.getElementById('Téléphone') ? document.getElementById('Téléphone').value || null : null;
             const nom = document.getElementById('Nom') ? document.getElementById('Nom').value || null : null;
