@@ -3615,7 +3615,7 @@
                 lieu = createGoogleMapsLink(lieu); // ← GARDEZ cette ligne importante !
             }
             const prix = document.getElementById('Prix') ? document.getElementById('Prix').value || null : null;
-            const observations = "";
+            const observations = document.getElementById('Observations') ? document.getElementById('Observations').value || null : null;
             const nombre_heures = document.getElementById('NombreHeures') ? document.getElementById('NombreHeures').value || null : null;
             const employeSelect = document.getElementById('employeSelect');
             const ajouté_pour = employeSelect ? employeSelect.value || null : null;
