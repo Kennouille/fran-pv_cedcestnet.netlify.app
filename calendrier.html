@@ -182,6 +182,34 @@
         async function addToQueue(operation) {
             console.log(`[IDB/Queue] Tentative d'ajout à la file d'attente:`, operation);
 
+            // ===== AJOUTEZ CES LIGNES POUR LE DEBUG =====
+            console.log('🔍 DEBUG addToQueue - Inspection du payload:');
+            console.log('Operation type:', operation.type);
+            console.log('Target table:', operation.targetTable);
+            console.log('Target ID:', operation.targetId);
+
+            if (operation.payload) {
+                console.log('Payload keys:', Object.keys(operation.payload));
+                console.log('Payload values:', operation.payload);
+
+                // Vérification spécifique pour Téléphone
+                if (operation.payload.Téléphone !== undefined) {
+                    console.log('⚠️ ATTENTION: Téléphone trouvé dans payload avec valeur:', operation.payload.Téléphone);
+                    console.log('Type de Téléphone:', typeof operation.payload.Téléphone);
+                }
+
+                if (operation.payload.Téléphone === null) {
+                    console.log('🚨 PROBLÈME: Téléphone est null dans le payload!');
+
+                    // Option: supprimer Téléphone:null du payload avant de stocker
+                    const { Téléphone, ...cleanPayload } = operation.payload;
+                    operation.payload = cleanPayload;
+                    console.log('✅ Téléphone null retiré du payload avant stockage');
+                }
+            }
+            console.log('================================');
+            // ===== FIN DU DEBUG =====
+
             // --- Début de la SIMULATION (Remplacez par IndexedDB en production) ---
             try {
                 const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
@@ -4367,6 +4395,10 @@
                 const updatePayload = { [databaseFieldName]: fieldValue };
 
                 // --- 4. ENREGISTREMENT DANS LA FILE D'ATTENTE ---
+                console.log('=== DEBUG saveTravailField ===');
+                console.log('Payload avant addToQueue:', JSON.stringify(updatePayload, null, 2));
+                console.log('=============================');
+
                 await addToQueue({
                     type: 'UPDATE',
                     targetTable: 'event_quot1_fran',
