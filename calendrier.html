@@ -3717,8 +3717,7 @@
                 lieu = createGoogleMapsLink(lieu); // ← GARDEZ cette ligne importante !
             }
             const prix = document.getElementById('Prix') ? document.getElementById('Prix').value || null : null;
-            const observationsRaw = document.getElementById('Observations') ? document.getElementById('Observations').value || null : null;
-            const observations = observationsRaw ? formatSimpleMarkdown(observationsRaw) : null;
+            const observations = document.getElementById('Observations') ? document.getElementById('Observations').value || null : null;
             const nombre_heures = document.getElementById('NombreHeures') ? document.getElementById('NombreHeures').value || null : null;
             const employeSelect = document.getElementById('employeSelect');
             const ajouté_pour = employeSelect ? employeSelect.value || null : null;
@@ -4222,39 +4221,6 @@
             }
         }
 
-        // ============ FONCTION POUR CONVERTIR LE FORMATAGE OBSERVATIONS ============
-        function formatSimpleMarkdown(text) {
-            if (!text || text.trim() === '') return null;
-
-            // Étape 1: Protéger les marqueurs de formatage avant de traiter les sauts de ligne
-            let formattedText = text;
-
-            // Étape 2: Traiter d'abord les sauts de ligne DOUBLES (paragraphes)
-            // Convertir deux retours à la ligne ou plus en <br><br>
-            formattedText = formattedText.replace(/\n\s*\n/g, '<br><br>');
-
-            // Étape 3: Traiter les sauts de ligne simples (à l'intérieur des paragraphes)
-            // Ne pas convertir les \n qui sont à l'intérieur de [yellow]...[/yellow] ou **...**
-            // On va faire une conversion prudente
-            formattedText = formattedText.replace(/([^\n])\n([^\n])/g, '$1<br>$2');
-
-            // Étape 4: Convertir **texte** en <strong>texte</strong>
-            // Faire en plusieurs passes pour éviter les conflits
-            formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-            // Étape 5: Convertir [yellow]texte[/yellow] en surlignage
-            formattedText = formattedText.replace(/\[yellow\](.*?)\[\/yellow\]/g, function(match, content) {
-                // Ne pas modifier le contenu à l'intérieur
-                return '<span style="background-color: yellow; padding: 1px 3px; border-radius: 2px;">' + content + '</span>';
-            });
-
-            // Étape 6: Nettoyer les doubles <br> qui pourraient être créés
-            formattedText = formattedText.replace(/<br>\s*<br>/g, '<br><br>');
-
-            return formattedText;
-        }
-        // ============ FIN FONCTION DE CONVERSION ============
-
         function showNomSuggestions(clients) {
             hideNomSuggestions(); // Supprimer les suggestions précédentes
 
@@ -4515,113 +4481,8 @@
         }
 
         // Initialiser le textarea du formulaire
-        // ============ DÉBUT : SECTION OBSERVATIONS AVEC FORMATAGE ============
-        // Initialiser le textarea du formulaire avec barre d'outils
         const observationsTextarea = document.getElementById('Observations');
         if (observationsTextarea) {
-            // === AJOUT : Créer une barre d'outils simple ===
-            const toolbar = document.createElement('div');
-            toolbar.style.cssText = `
-                display: flex;
-                gap: 5px;
-                margin-bottom: 5px;
-                flex-wrap: wrap;
-                padding: 5px;
-                background: #f8f9fa;
-                border-radius: 4px;
-                border: 1px solid #dee2e6;
-            `;
-
-            // Bouton Gras
-            const boldBtn = document.createElement('button');
-            boldBtn.type = 'button';
-            boldBtn.innerHTML = '<strong>B</strong>';
-            boldBtn.title = 'Mettre en gras (Ctrl+B)';
-            boldBtn.style.cssText = `
-                padding: 4px 8px;
-                border: 1px solid #ccc;
-                background: white;
-                border-radius: 3px;
-                cursor: pointer;
-                font-weight: bold;
-                font-size: 14px;
-                width: 32px;
-            `;
-
-            // Bouton Jaune fluo
-            const yellowBtn = document.createElement('button');
-            yellowBtn.type = 'button';
-            yellowBtn.innerHTML = '🟡';
-            yellowBtn.title = 'Surligner en jaune';
-            yellowBtn.style.cssText = `
-                padding: 4px 8px;
-                border: 1px solid #ccc;
-                background: white;
-                border-radius: 3px;
-                cursor: pointer;
-                font-size: 14px;
-                width: 32px;
-            `;
-
-            // Insertion de la barre d'outils AVANT le textarea
-            observationsTextarea.parentNode.insertBefore(toolbar, observationsTextarea);
-            toolbar.appendChild(boldBtn);
-            toolbar.appendChild(yellowBtn);
-
-            // === Fonction pour entourer le texte sélectionné ===
-            function wrapSelection(tag, style) {
-                const start = observationsTextarea.selectionStart;
-                const end = observationsTextarea.selectionEnd;
-                const text = observationsTextarea.value;
-                const selectedText = text.substring(start, end);
-
-                if (selectedText) {
-                    let wrappedText = '';
-                    let newCursorPos = start;
-
-                    if (tag === 'strong') {
-                        wrappedText = `**${selectedText}**`;
-                        newCursorPos = start + 2;
-                    } else if (style === 'yellow') {
-                        wrappedText = `[yellow]${selectedText}[/yellow]`;
-                        newCursorPos = start + 8;
-                    }
-
-                    const newText = text.substring(0, start) + wrappedText + text.substring(end);
-                    observationsTextarea.value = newText;
-
-                    // Remettre le focus et positionner le curseur
-                    observationsTextarea.focus();
-                    observationsTextarea.setSelectionRange(newCursorPos, newCursorPos + selectedText.length);
-
-                    // Redéclencher l'auto-expansion
-                    autoExpandFormTextarea(observationsTextarea);
-                }
-            }
-
-            // === Événements des boutons ===
-            boldBtn.addEventListener('click', function() {
-                wrapSelection('strong');
-            });
-
-            yellowBtn.addEventListener('click', function() {
-                wrapSelection(null, 'yellow');
-            });
-
-            // === Raccourcis clavier (Ctrl+B pour gras) ===
-            observationsTextarea.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && e.key === 'b') {
-                    e.preventDefault();
-                    wrapSelection('strong');
-                }
-            });
-
-            // === Fonction d'auto-expansion ===
-            function autoExpandFormTextarea(textarea) {
-                textarea.style.height = 'auto';
-                textarea.style.height = (textarea.scrollHeight) + 'px';
-            }
-
             // Initialiser la hauteur
             autoExpandFormTextarea(observationsTextarea);
 
@@ -4635,7 +4496,7 @@
                 autoExpandFormTextarea(this);
             });
         }
-        // ============ FIN : SECTION OBSERVATIONS AVEC FORMATAGE ============
+
 
 
             let isCalendarGenerated = false;
@@ -5526,14 +5387,9 @@
                             `}
                         </td>
                         <td data-column="Observations">
-                            <!-- DIV avec auto-expansion -->
-                            <div class="observation-content"
-                                 contenteditable="true"
-                                 data-field="observations"
-                                 style="min-height: 60px; height: auto; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; white-space: pre-wrap; overflow: hidden;"
-                                 oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,250)+'px';">
-                                ${event.Observations || ''}
-                            </div>
+                            <textarea class="observation-text auto-expand-textarea"
+                                      data-field="observations"
+                                      rows="2">${event.Observations || ''}</textarea>
 
                             <!-- Case à cocher pour photos obligatoires (seulement pour configuser) -->
                             ${isConfigUser ? `
@@ -5636,14 +5492,6 @@
 
 
                     `;
-
-                   const obsDiv = row.querySelector('.observation-content');
-                        if (obsDiv) {
-                            obsDiv.style.height = 'auto';
-                            setTimeout(() => {
-                                obsDiv.style.height = Math.min(obsDiv.scrollHeight, 250) + 'px';
-                            }, 10);
-                        }
 
                     // ✅ Charger l'historique de pointage ONSS pour cette ligne
                     loadPointageHistory(row);
@@ -5970,13 +5818,13 @@
                         });
 
 
-                        const observationContent = row.querySelector('.observation-content');
-                        if (observationContent) {
-                            observationContent.addEventListener('blur', function() {
+                        const observationsTextarea = row.querySelector('.observation-text');
+                        if (observationsTextarea) {
+                            observationsTextarea.addEventListener('blur', function() {
                                 applyChangesWithoutPrompt(row, false);
                             });
 
-                            observationContent.addEventListener('keydown', function(e) {
+                            observationsTextarea.addEventListener('keydown', function(e) {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
                                     this.blur();
@@ -6357,25 +6205,25 @@
                           Array.from(row.cells).forEach(cell => {
                             const column = cell.dataset.column;
                             if (column) {
-                                let cellValue;
-                                let ancienneValeur = rendezvousActuel[column];
+                              let cellValue;
+                              let ancienneValeur = rendezvousActuel[column];
 
-                                // --- RÉCUPÉRATION DE LA VALEUR CORRECTE ---
-                                if (column === "Observations") {
-                                    // ESSAIE D'ABORD LE DIV, PUIS LE TEXTAREA
-                                    const observationDiv = row.querySelector('.observation-content');
-                                    const textarea = row.querySelector('textarea[data-field="observations"]');
-                                    cellValue = observationDiv ?
-                                                observationDiv.innerHTML.trim() :
-                                                (textarea ? textarea.value.trim() : "");
-                                } else if (column === "Travail") {
-                                    const select = cell.querySelector('[data-field="StatutTravail"]');
-                                    cellValue = select ? select.value.trim() : "";
-                                    ancienneValeur = rendezvousActuel.Travail;
-                                } else {
-                                    // CORRECTION : Protection contre undefined/null
-                                    cellValue = (cell.textContent || '').trim();
-                                }
+                              // --- RÉCUPÉRATION DE LA VALEUR CORRECTE ---
+                              if (column === "Observations") {
+                                const textarea = row.querySelector('[data-field="observations"]');
+                                cellValue = textarea ? textarea.value.trim() : "";
+                              } else if (column === "Travail") {
+                                // ✅ Cible le SELECT dans la cellule Travail
+                                const select = cell.querySelector('[data-field="StatutTravail"]');
+                                cellValue = select ? select.value.trim() : "";
+
+                                // La colonne Travail stocke un objet JSON dans la BDD (même si nous n'avons qu'une clé).
+                                // Il faut donc s'assurer que `ancienneValeur` est bien l'objet Travail.
+                                ancienneValeur = rendezvousActuel.Travail;
+                              } else {
+                                cellValue = cell.textContent.trim();
+                              }
+                              // ------------------------------------------
 
                               // GESTION DES VALEURS VIDES/NULL ET CONVERSION
                               if (column === 'Prix') {
@@ -6537,6 +6385,41 @@
 
 
                 }); // Fermeture du forEach(event => { ... });
+
+                // Fonction pour auto-expander les textareas d'observations
+                function autoExpandTextarea(textarea) {
+                    // Réinitialiser les dimensions
+                    textarea.style.height = 'auto';
+                    textarea.style.width = 'auto';
+
+                    // Obtenir la hauteur nécessaire pour le contenu
+                    const neededHeight = textarea.scrollHeight;
+
+                    // Calculer la largeur correspondante (ajoute la même valeur qu'en hauteur)
+                    const currentWidth = parseFloat(getComputedStyle(textarea).width);
+                    const newWidth = currentWidth + (neededHeight - parseFloat(getComputedStyle(textarea).height));
+
+                    // Appliquer les nouvelles dimensions (avec limites raisonnables)
+                    textarea.style.height = Math.min(neededHeight, 250) + 'px'; // Max 400px
+                    textarea.style.width = Math.max(newWidth, 200) + 'px';      // Min 200px, s'élargit avec la hauteur
+                }
+
+                // Initialiser l'auto-expansion pour tous les textareas
+                document.querySelectorAll('.auto-expand-textarea').forEach(textarea => {
+                    // Initialiser la hauteur
+                    autoExpandTextarea(textarea);
+
+                    // Auto-expansion à la saisie
+                    textarea.addEventListener('input', function() {
+                        autoExpandTextarea(this);
+                    });
+
+                    // Également à chaque blur (au cas où le contenu change via copier-coller)
+                    textarea.addEventListener('blur', function() {
+                        autoExpandTextarea(this);
+                    });
+                });
+
 
                 return data;
 
@@ -7759,46 +7642,39 @@
         };
 
          function saveDate() {
-            const selectedDateDisplay = document.getElementById('selectedDateDisplay');
-            const selectedDate = selectedDateDisplay.textContent.split(' : ')[1];
-            const tableBody = document.querySelector('#editable-table tbody');
-            const rows = tableBody.querySelectorAll('tr');
+             const selectedDateDisplay = document.getElementById('selectedDateDisplay');
+             const selectedDate = selectedDateDisplay.textContent.split(' : ')[1];
+             const tableBody = document.querySelector('#editable-table tbody');
+             const rows = tableBody.querySelectorAll('tr');
 
-            event[selectedDate] = [];
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-
-                // VÉRIFIE SI LES CELLULES EXISTENT
-                if (!cells || cells.length < 12) {
-                    console.error('Ligne invalide, cells:', cells);
-                    return; // Skip cette ligne
-                }
-
-                const rowData = {
-                    téléphone: cells[0]?.innerText || '',
-                    nom: cells[1]?.innerText || '',
-                    date: cells[2]?.innerText || '',
-                    heure: cells[3]?.innerText || '',
-                    min: cells[4]?.innerText || '',
-                    lieu: cells[5]?.innerText || '',
-                    prix: cells[6]?.innerText || '',
-                    travail: cells[7]?.innerText || '',
-                    observations: row.querySelector('.observation-content')?.innerHTML || '',
+             event[selectedDate] = [];
+             rows.forEach(row => {
+                 const cells = row.querySelectorAll('td');
+                 const rowData = {
+                    téléphone: cells[0].textContent,
+                    nom: cells[1].textContent,
+                    date: cells[2].textContent,
+                    heure: cells[3].textContent,
+                    min: cells[4].textContent,
+                    lieu: cells[5].textContent,
+                    prix: cells[6].textContent,
+                    travail: cells[7].textContent,
+                    observations: row.querySelector('textarea.observation-text')?.value || '',
                     photo_avant_url: row.querySelector('.photo-avant')?.src || null,
                     photo_apres_url: row.querySelector('.photo-apres')?.src || null,
-                    nombre_heures: cells[9]?.innerText || '',
-                    ajouté_pour: cells[10]?.innerText || '',
-                    user_id: cells[11]?.innerText || '',
-                    env_données: cells[12]?.querySelector('[data-column="env_données"]')?.checked || false,
-                    paiement: cells[12]?.querySelector('.paiement-link')?.dataset?.paiement || '',
-                    payé: cells[12]?.querySelector('[data-column="payé"]')?.checked || false
+                    nombre_heures: cells[9].textContent,
+                    ajouté_pour: cells[10].textContent,
+                    user_id: cells[11].textContent,
+                    env_données: cells[12].querySelector('[data-column="env_données"]').checked,
+                    paiement: cells[12].querySelector('.paiement-link').dataset.paiement,
+                    payé: cells[12].querySelector('[data-column="payé"]').checked
                 };
+                 event[selectedDate].push(rowData);
 
-                event[selectedDate].push(rowData);
-            });
+             });
 
-            alert(getTranslation('alert_agenda_saved_for_date') + ' ' + selectedDate);
-        }
+             alert(getTranslation('alert_agenda_saved_for_date') + ' ' + selectedDate); // Traduire
+         }
 
         async function fetchNoteForDate(date, noteType = 1) {
             try {
