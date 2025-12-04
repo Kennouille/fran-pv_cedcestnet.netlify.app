@@ -3776,6 +3776,7 @@
                     }
                 }
 
+                // Dans la section où tu récupères recurrence_rule
                 if (frequency === "biweekly") {
                     recurrence_rule = { frequency: "biweekly" };
 
@@ -3818,6 +3819,7 @@
                 // La gestion de endDate reste la même pour toutes les fréquences
                 const endDate = document.getElementById("recurrence-endDate")?.value;
                 if (endDate) recurrence_rule.endDate = endDate;
+            }
 
 
 
