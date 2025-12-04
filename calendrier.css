@@ -1103,11 +1103,15 @@ td[data-column="Observations"] {
 }
 
 .weekly-grid {
-  max-width: 400px;
-  display: inline-flex;
-  justify-content: center; /* centrer l’ensemble */
-  gap: 100px;              /* espace entre les colonnes */
-  margin-top: 10px;
+    max-width: 400px;
+    width: 100%;           /* AJOUTÉ */
+    box-sizing: border-box; /* AJOUTÉ */
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+    margin-top: 10px;
+    margin-left: auto;     /* AJOUTÉ */
+    margin-right: auto;    /* AJOUTÉ */
 }
 
 .weekly-grid .column {
