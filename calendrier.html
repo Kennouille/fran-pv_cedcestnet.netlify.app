@@ -5637,20 +5637,25 @@
 
                     `;
 
-                    setTimeout(() => {
-                        const obsDiv = row.querySelector('.observation-content');
-                        if (obsDiv) {
-                            // Initialiser la hauteur
-                            obsDiv.style.height = 'auto';
-                            obsDiv.style.height = Math.min(obsDiv.scrollHeight, 250) + 'px';
+                    // Auto-expansion IMMÉDIATE pour observations
+                    const obsDiv = row.querySelector('.observation-content');
+                    if (obsDiv) {
+                        // Force le rendu d'abord
+                        obsDiv.style.display = 'none';
+                        obsDiv.offsetHeight; // Force reflow
+                        obsDiv.style.display = '';
 
-                            // Écouter les changements
-                            obsDiv.addEventListener('input', function() {
-                                this.style.height = 'auto';
-                                this.style.height = Math.min(this.scrollHeight, 250) + 'px';
-                            });
-                        }
-                    }, 10);
+                        // Définir la hauteur
+                        const height = Math.min(obsDiv.scrollHeight, 250);
+                        obsDiv.style.height = height + 'px';
+                        obsDiv.style.overflowY = 'hidden';
+
+                        // Événement pour futur
+                        obsDiv.addEventListener('input', function() {
+                            this.style.height = 'auto';
+                            this.style.height = Math.min(this.scrollHeight, 250) + 'px';
+                        });
+                    }
 
                     // ✅ Charger l'historique de pointage ONSS pour cette ligne
                     loadPointageHistory(row);
