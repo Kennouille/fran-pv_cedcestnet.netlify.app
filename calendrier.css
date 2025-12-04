@@ -1102,21 +1102,24 @@ td[data-column="Observations"] {
   background: #c6282
 }
 
+/* --------- Grid des jours --------- */
 .weekly-grid {
   display: flex;
-  justify-content: center; /* centrer l’ensemble */
-  gap: 100px;              /* espace entre les colonnes */
+  justify-content: flex-start; /* laisse les colonnes à gauche, gap sera appliqué */
+  gap: 100px;                   /* espace voulu entre colonnes */
   margin-top: 10px;
 
-  flex-wrap: nowrap;
-  width: max-content;       /* >>> empêche la compression et rend le gap visible <<< */
+  flex-wrap: nowrap;            /* empêche wrapping pour garder 2 colonnes côte à côte */
+  width: max-content;           /* largeur basée sur le contenu -> permet le scroll parent */
 }
 
-
+/* --------- Chaque colonne doit avoir une largeur minimale --------- */
 .weekly-grid .column {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* espace entre chaque jour */
+  gap: 8px;
+  min-width: 140px; /* ← ajuste cette valeur selon l'espace que tu veux par colonne */
+  box-sizing: border-box;
 }
 
 .weekly-grid label {
@@ -2401,20 +2404,14 @@ td[data-column="Observations"] {
 
 /* --- Styles pour la gestion du débordement dans la zone de récurrence --- */
 
+/* --------- Container : autoriser scroll horizontal --------- */
 .recurrence-options-container {
-    /* Hauteur maximale que ce bloc peut prendre */
-    max-height: 200px; /* Ajustez cette valeur si nécessaire (ex: 200px ou 300px) */
-
-
-    /* Cache le défilement horizontal */
-    overflow-x: hidden;
-
-    /* Important : ajoute un padding pour ne pas que le contenu soit caché par la barre de défilement */
-    padding-right: 30px;
-    margin-bottom: 15px;
-
-    /* Optionnel : ajoute une bordure pour mieux visualiser le conteneur */
-    /* border: 1px dashed #ccc; */
+  max-height: 200px;        /* garde la hauteur max si tu veux */
+  overflow-x: auto;         /* <-- autorise le scroll horizontal (important) */
+  overflow-y: auto;         /* permet aussi le scroll vertical si besoin */
+  padding-right: 12px;      /* padding sûr (réduit) pour éviter découpe */
+  margin-bottom: 15px;
+  box-sizing: border-box;
 }
 
 #progressText {
