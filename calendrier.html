@@ -7784,39 +7784,46 @@
         };
 
          function saveDate() {
-             const selectedDateDisplay = document.getElementById('selectedDateDisplay');
-             const selectedDate = selectedDateDisplay.textContent.split(' : ')[1];
-             const tableBody = document.querySelector('#editable-table tbody');
-             const rows = tableBody.querySelectorAll('tr');
+            const selectedDateDisplay = document.getElementById('selectedDateDisplay');
+            const selectedDate = selectedDateDisplay.textContent.split(' : ')[1];
+            const tableBody = document.querySelector('#editable-table tbody');
+            const rows = tableBody.querySelectorAll('tr');
 
-             event[selectedDate] = [];
-             rows.forEach(row => {
-                 const cells = row.querySelectorAll('td');
-                 const rowData = {
-                    téléphone: cells[0].textContent,
-                    nom: cells[1].textContent,
-                    date: cells[2].textContent,
-                    heure: cells[3].textContent,
-                    min: cells[4].textContent,
-                    lieu: cells[5].textContent,
-                    prix: cells[6].textContent,
-                    travail: cells[7].textContent,
+            event[selectedDate] = [];
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+
+                // VÉRIFIE SI LES CELLULES EXISTENT
+                if (!cells || cells.length < 12) {
+                    console.error('Ligne invalide, cells:', cells);
+                    return; // Skip cette ligne
+                }
+
+                const rowData = {
+                    téléphone: cells[0]?.innerText || '',
+                    nom: cells[1]?.innerText || '',
+                    date: cells[2]?.innerText || '',
+                    heure: cells[3]?.innerText || '',
+                    min: cells[4]?.innerText || '',
+                    lieu: cells[5]?.innerText || '',
+                    prix: cells[6]?.innerText || '',
+                    travail: cells[7]?.innerText || '',
                     observations: row.querySelector('.observation-content')?.innerHTML || '',
                     photo_avant_url: row.querySelector('.photo-avant')?.src || null,
                     photo_apres_url: row.querySelector('.photo-apres')?.src || null,
-                    nombre_heures: cells[9].textContent,
-                    ajouté_pour: cells[10].textContent,
-                    user_id: cells[11].textContent,
-                    env_données: cells[12].querySelector('[data-column="env_données"]').checked,
-                    paiement: cells[12].querySelector('.paiement-link').dataset.paiement,
-                    payé: cells[12].querySelector('[data-column="payé"]').checked
+                    nombre_heures: cells[9]?.innerText || '',
+                    ajouté_pour: cells[10]?.innerText || '',
+                    user_id: cells[11]?.innerText || '',
+                    env_données: cells[12]?.querySelector('[data-column="env_données"]')?.checked || false,
+                    paiement: cells[12]?.querySelector('.paiement-link')?.dataset?.paiement || '',
+                    payé: cells[12]?.querySelector('[data-column="payé"]')?.checked || false
                 };
-                 event[selectedDate].push(rowData);
 
-             });
+                event[selectedDate].push(rowData);
+            });
 
-             alert(getTranslation('alert_agenda_saved_for_date') + ' ' + selectedDate); // Traduire
-         }
+            alert(getTranslation('alert_agenda_saved_for_date') + ' ' + selectedDate);
+        }
 
         async function fetchNoteForDate(date, noteType = 1) {
             try {
