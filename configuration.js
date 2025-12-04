@@ -3,11 +3,39 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Palette de couleurs Outlook-like
 const COLOR_PALETTE = [
-    '#D83B01', '#E3008C', '#0078D7', '#00BCF2', '#00B294',
-    '#5D2A9C', '#B4009E', '#E74856', '#F7630C', '#FFB900',
-    '#7A7574', '#68768A', '#8E8CD8', '#8764B8', '#881798',
-    '#107C10', '#498205', '#767676', '#FF8C00', '#E81123',
-    '#2D7D9A', '#6B69D6', '#008272', '#515C6B', '#567C73'
+    // Rouges/Oranges
+    '#D83B01', // Orange vif
+    '#E74856', // Rouge-rose
+    '#E81123', // Rouge
+    '#EA005E', // Rose vif
+    '#C239B3', // Violet
+
+    // Bleus
+    '#0078D7', // Bleu Microsoft
+    '#00BCF2', // Bleu clair
+    '#50E6FF', // Cyan
+    '#6B69D6', // Bleu lavande
+    '#8E8CD8', // Lavande
+
+    // Verts
+    '#107C10', // Vert foncé
+    '#498205', // Vert
+    '#00B294', // Turquoise
+    '#00CC6A', // Vert clair
+    '#0F6CBD', // Bleu-vert
+
+    // Jaunes/Ors
+    '#FFB900', // Jaune
+    '#F7630C', // Orange
+    '#FF8C00', // Orange foncé
+    '#E3008C', // Magenta
+
+    // Gris/Neutres
+    '#847545', // Marron
+    '#7A7574', // Gris
+    '#68768A', // Gris bleu
+    '#515C6B', // Gris ardoise
+    '#567C73'  // Vert-gris
 ];
 
 const supabaseUrl = 'https://mngggybayjooqkzbhvqy.supabase.co';
