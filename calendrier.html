@@ -5637,6 +5637,21 @@
 
                     `;
 
+                    setTimeout(() => {
+                        const obsDiv = row.querySelector('.observation-content');
+                        if (obsDiv) {
+                            // Initialiser la hauteur
+                            obsDiv.style.height = 'auto';
+                            obsDiv.style.height = Math.min(obsDiv.scrollHeight, 250) + 'px';
+
+                            // Écouter les changements
+                            obsDiv.addEventListener('input', function() {
+                                this.style.height = 'auto';
+                                this.style.height = Math.min(this.scrollHeight, 250) + 'px';
+                            });
+                        }
+                    }, 10);
+
                     // ✅ Charger l'historique de pointage ONSS pour cette ligne
                     loadPointageHistory(row);
 
@@ -6529,48 +6544,6 @@
 
 
                 }); // Fermeture du forEach(event => { ... });
-
-                // Fonction pour auto-expander les éléments d'observations
-                function autoExpandTextarea(element) {
-                    // Pour les DIV contenteditable, utilise simplement scrollHeight
-                    if (element.tagName === 'DIV') {
-                        element.style.height = 'auto';
-                        const neededHeight = element.scrollHeight;
-                        // Même limite que les textarea : max 250px
-                        element.style.height = Math.min(neededHeight, 250) + 'px';
-                        // Pas de défilement
-                        element.style.overflowY = 'hidden';
-                    }
-                    // Pour les TEXTAREA, garde ton code original
-                    else if (element.tagName === 'TEXTAREA') {
-                        // Ton code original :
-                        element.style.height = 'auto';
-                        element.style.width = 'auto';
-                        const neededHeight = element.scrollHeight;
-                        const currentWidth = parseFloat(getComputedStyle(element).width);
-                        const newWidth = currentWidth + (neededHeight - parseFloat(getComputedStyle(element).height));
-
-                        element.style.height = Math.min(neededHeight, 250) + 'px';
-                        element.style.width = Math.max(newWidth, 200) + 'px';
-                    }
-                }
-
-                // Initialiser l'auto-expansion pour tous les textareas
-                document.querySelectorAll('.auto-expand-textarea').forEach(textarea => {
-                    // Initialiser la hauteur
-                    autoExpandTextarea(textarea);
-
-                    // Auto-expansion à la saisie
-                    textarea.addEventListener('input', function() {
-                        autoExpandTextarea(this);
-                    });
-
-                    // Également à chaque blur (au cas où le contenu change via copier-coller)
-                    textarea.addEventListener('blur', function() {
-                        autoExpandTextarea(this);
-                    });
-                });
-
 
                 return data;
 
