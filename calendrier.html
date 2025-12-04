@@ -717,10 +717,11 @@
                     return 'Quotidienne';
 
                 case 'weekly':
+                    const intervalText = rule.interval > 1 ? `Toutes les ${rule.interval} semaines` : 'Chaque semaine';
                     const days = rule.days ? rule.days.map(day =>
                         day.charAt(0).toUpperCase() + day.slice(1)
                     ).join(', ') : 'Aucun jour';
-                    return `Hebdomadaire (${days})`;
+                    return `${intervalText} (${days})`;
 
                 case 'monthly':
                     if (rule.monthlyType === 'relative') {
@@ -736,6 +737,23 @@
                         return `Mensuelle (${weekNames[rule.weekOfMonth]} ${dayNames[rule.dayOfWeek]})`;
                     } else {
                         return `Mensuelle (Jour ${rule.dayOfMonth})`;
+                    }
+
+                case 'every_x_months':
+                    const intervalMonths = rule.interval || 2;
+                    if (rule.monthlyType === 'relative') {
+                        const weekNames = {
+                            '1': 'Premier', '2': 'Deuxième', '3': 'Troisième',
+                            '4': 'Quatrième', 'last': 'Dernier'
+                        };
+                        const dayNames = {
+                            'monday': 'Lundi', 'tuesday': 'Mardi', 'wednesday': 'Mercredi',
+                            'thursday': 'Jeudi', 'friday': 'Vendredi', 'saturday': 'Samedi',
+                            'sunday': 'Dimanche'
+                        };
+                        return `Tous les ${intervalMonths} mois (${weekNames[rule.weekOfMonth]} ${dayNames[rule.dayOfWeek]})`;
+                    } else {
+                        return `Tous les ${intervalMonths} mois (Jour ${rule.dayOfMonth})`;
                     }
 
                 case 'yearly':
@@ -827,7 +845,16 @@
 
         // Fonction pour remplir les options de récurrence
         function fillRecurrenceOptions(rule) {
+            if (!rule) return;
+
+            // Remplir l'intervalle hebdomadaire si c'est une récurrence hebdomadaire
             if (rule.frequency === 'weekly' && rule.days) {
+                // Remplir l'intervalle
+                if (rule.interval && document.getElementById('weekly-interval')) {
+                    document.getElementById('weekly-interval').value = rule.interval;
+                }
+
+                // Remplir les jours cochés
                 rule.days.forEach(day => {
                     const checkbox = document.querySelector(`#weekly-options input[value="${day}"]`);
                     if (checkbox) checkbox.checked = true;
@@ -853,6 +880,30 @@
                 }
             }
 
+            else if (rule.frequency === 'every_x_months') {
+                // Remplir l'intervalle mensuel
+                if (document.getElementById('monthly-interval')) {
+                    document.getElementById('monthly-interval').value = rule.interval || 2;
+                }
+
+                if (rule.monthlyType === 'fixed') {
+                    document.getElementById('every-x-monthly-type-fixed').checked = true;
+                    document.getElementById('every-x-monthly-type-fixed').dispatchEvent(new Event('change'));
+                    if (document.getElementById('every-x-recurrence-dayOfMonth')) {
+                        document.getElementById('every-x-recurrence-dayOfMonth').value = rule.dayOfMonth || 1;
+                    }
+                } else {
+                    document.getElementById('every-x-monthly-type-relative').checked = true;
+                    document.getElementById('every-x-monthly-type-relative').dispatchEvent(new Event('change'));
+                    if (document.getElementById('every-x-recurrence-weekOfMonth')) {
+                        document.getElementById('every-x-recurrence-weekOfMonth').value = rule.weekOfMonth || '1';
+                    }
+                    if (document.getElementById('every-x-recurrence-dayOfWeek')) {
+                        document.getElementById('every-x-recurrence-dayOfWeek').value = rule.dayOfWeek || 'monday';
+                    }
+                }
+            }
+
             else if (rule.frequency === 'yearly') {
                 if (document.getElementById('recurrence-month')) {
                     document.getElementById('recurrence-month').value = rule.month || 1;
@@ -862,7 +913,7 @@
                 }
             }
 
-            // Remplir la date de fin (par exemple, +1 an)
+            // Remplir la date de fin
             if (rule.endDate && document.getElementById('recurrence-endDate')) {
                 const currentEnd = parseLocalDate(rule.endDate);
                 const newEnd = new Date(currentEnd);
@@ -1152,6 +1203,7 @@
                 return [startDate];
             }
 
+            // Conversion et normalisation de la date de début
             if (typeof startDate === "string") {
                 startDate = parseLocalDate(startDate);
             } else {
@@ -1159,6 +1211,7 @@
             }
             startDate = normalizeToMidnight(startDate);
 
+            // Date de fin
             const endDate = rule.endDate
                 ? (typeof rule.endDate === "string" ? parseLocalDate(rule.endDate) : new Date(rule.endDate))
                 : new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate());
@@ -1172,6 +1225,17 @@
             let iterationCount = 0;
             const MAX_ITERATIONS = 10000;
 
+            // Variables pour gérer les intervalles
+            const weeklyInterval = rule.interval || 1;
+            const monthlyInterval = rule.interval || 1;
+            let weekCounter = 0;
+
+            // Calculer la première semaine pour les intervalles
+            if (rule.frequency === "weekly" && weeklyInterval > 1) {
+                // On commence à la semaine 0 pour la première occurrence
+                weekCounter = 0;
+            }
+
             while (current <= endDate && iterationCount < MAX_ITERATIONS) {
                 iterationCount++;
 
@@ -1179,13 +1243,25 @@
                     results.push(formatDateLocal(current));
                     current.setDate(current.getDate() + 1);
                 }
+
                 else if (rule.frequency === "weekly") {
                     const dayIndex = current.getDay();
-                    if (ruleDayIndices.includes(dayIndex)) {
+
+                    // Vérifier si on est dans la bonne semaine selon l'intervalle
+                    const isCorrectWeek = (weeklyInterval === 1) || (weekCounter % weeklyInterval === 0);
+
+                    if (isCorrectWeek && ruleDayIndices.includes(dayIndex)) {
                         results.push(formatDateLocal(current));
                     }
+
                     current.setDate(current.getDate() + 1);
+
+                    // Si on arrive à dimanche, on incrémente le compteur de semaine
+                    if (current.getDay() === 0) {
+                        weekCounter++;
+                    }
                 }
+
                 else if (rule.frequency === "monthly") {
                     let targetDate;
                     if (rule.monthlyType === "relative") {
@@ -1193,6 +1269,12 @@
                     } else {
                         targetDate = new Date(current);
                         targetDate.setDate(rule.dayOfMonth || current.getDate());
+
+                        // Gérer les mois qui n'ont pas assez de jours
+                        const originalMonth = targetDate.getMonth();
+                        while (targetDate.getMonth() !== originalMonth) {
+                            targetDate.setDate(targetDate.getDate() - 1);
+                        }
                     }
 
                     if (targetDate && targetDate >= startDate && targetDate <= endDate) {
@@ -1200,18 +1282,46 @@
                     }
                     current.setMonth(current.getMonth() + 1);
                 }
-                else if (rule.frequency === "yearly") {
-                    const temp = new Date(current);
-                    temp.setMonth((rule.month || temp.getMonth()) - 1);
-                    temp.setDate(rule.day || temp.getDate());
 
-                    if (temp >= startDate && temp <= endDate) {
-                        results.push(formatDateLocal(temp));
+                else if (rule.frequency === "every_x_months") {
+                    let targetDate;
+                    if (rule.monthlyType === "relative") {
+                        targetDate = calculateRelativeMonthlyDate(current, rule.weekOfMonth, rule.dayOfWeek);
+                    } else {
+                        targetDate = new Date(current);
+                        targetDate.setDate(rule.dayOfMonth || current.getDate());
+
+                        // Gérer les mois qui n'ont pas assez de jours
+                        const originalMonth = targetDate.getMonth();
+                        while (targetDate.getMonth() !== originalMonth) {
+                            targetDate.setDate(targetDate.getDate() - 1);
+                        }
+                    }
+
+                    if (targetDate && targetDate >= startDate && targetDate <= endDate) {
+                        results.push(formatDateLocal(targetDate));
+                    }
+                    current.setMonth(current.getMonth() + monthlyInterval);
+                }
+
+                else if (rule.frequency === "yearly") {
+                    const targetDate = new Date(current);
+                    targetDate.setMonth((rule.month || 1) - 1);
+                    targetDate.setDate(rule.day || 1);
+
+                    // Gérer le 29 février pour les années non-bissextiles
+                    if (rule.month === 2 && rule.day === 29 && targetDate.getMonth() !== 1) {
+                        targetDate.setDate(28);
+                    }
+
+                    if (targetDate >= startDate && targetDate <= endDate) {
+                        results.push(formatDateLocal(targetDate));
                     }
                     current.setFullYear(current.getFullYear() + 1);
                 }
             }
 
+            // Retourner les dates uniques et triées
             return [...new Set(results)].sort();
         }
 
@@ -3649,23 +3759,29 @@
             if (frequency !== "none") {
                 recurrence_rule = { frequency };
 
+                // Dans la fonction addEventButton, ajouter la gestion des nouvelles options
                 if (frequency === "weekly") {
+                    const weeklyInterval = document.getElementById("weekly-interval")?.value;
+                    if (weeklyInterval) recurrence_rule.interval = parseInt(weeklyInterval, 10);
+
                     const selectedDays = Array.from(document.querySelectorAll("#weekly-options input[type=checkbox]:checked"))
                         .map(cb => cb.value);
                     if (selectedDays.length > 0) recurrence_rule.days = selectedDays;
                 }
 
-                if (frequency === "monthly") {
-                    const monthlyType = document.querySelector('input[name="monthly-type"]:checked')?.value || "fixed";
+                if (frequency === "every_x_months") {
+                    const monthlyInterval = document.getElementById("monthly-interval")?.value;
+                    if (monthlyInterval) recurrence_rule.interval = parseInt(monthlyInterval, 10);
+
+                    const monthlyType = document.querySelector('input[name="every-x-monthly-type"]:checked')?.value || "fixed";
                     recurrence_rule.monthlyType = monthlyType;
 
                     if (monthlyType === "fixed") {
-                        const dayOfMonth = document.getElementById("recurrence-dayOfMonth")?.value;
+                        const dayOfMonth = document.getElementById("every-x-recurrence-dayOfMonth")?.value;
                         if (dayOfMonth) recurrence_rule.dayOfMonth = parseInt(dayOfMonth, 10);
                     } else {
-                        // Type "relative" - jour relatif
-                        const weekOfMonth = document.getElementById("recurrence-weekOfMonth")?.value;
-                        const dayOfWeek = document.getElementById("recurrence-dayOfWeek")?.value;
+                        const weekOfMonth = document.getElementById("every-x-recurrence-weekOfMonth")?.value;
+                        const dayOfWeek = document.getElementById("every-x-recurrence-dayOfWeek")?.value;
 
                         if (weekOfMonth && dayOfWeek) {
                             recurrence_rule.weekOfMonth = weekOfMonth;
@@ -4501,16 +4617,28 @@
             // Tout cacher
             document.getElementById("weekly-options").style.display = "none";
             document.getElementById("monthly-options").style.display = "none";
+            document.getElementById("every-x-months-options").style.display = "none";
             document.getElementById("yearly-options").style.display = "none";
 
             // Montrer seulement le bon
             if (frequency === "weekly") {
-              document.getElementById("weekly-options").style.display = "block";
+                document.getElementById("weekly-options").style.display = "block";
             } else if (frequency === "monthly") {
-              document.getElementById("monthly-options").style.display = "block";
+                document.getElementById("monthly-options").style.display = "block";
+            } else if (frequency === "every_x_months") {
+                document.getElementById("every-x-months-options").style.display = "block";
             } else if (frequency === "yearly") {
-              document.getElementById("yearly-options").style.display = "block";
+                document.getElementById("yearly-options").style.display = "block";
             }
+        });
+
+        // Gérer l'affichage des options "Tous les X mois"
+        document.querySelectorAll('input[name="every-x-monthly-type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isFixed = this.value === "fixed";
+                document.getElementById("every-x-monthly-fixed-options").style.display = isFixed ? "block" : "none";
+                document.getElementById("every-x-monthly-relative-options").style.display = isFixed ? "none" : "block";
+            });
         });
 
         // Gestion de la bascule entre jour fixe et jour relatif pour la récurrence mensuelle
@@ -9391,17 +9519,26 @@
 
                   <label for="recurrence-frequency" data-i18n="recurrence_frequency">Fréquence :</label>
                   <select id="recurrence-frequency">
-                    <option value="none" selected data-i18n="recurrence_none">Aucune</option>
-                    <option value="daily" data-i18n="recurrence_daily">Quotidienne</option>
-                    <option value="weekly" data-i18n="recurrence_weekly">Hebdomadaire</option>
-                    <option value="monthly" data-i18n="recurrence_monthly">Mensuelle</option>
-                    <option value="yearly" data-i18n="recurrence_yearly">Annuelle</option>
-                  </select>
+                      <option value="none" selected data-i18n="recurrence_none">Aucune</option>
+                      <option value="daily" data-i18n="recurrence_daily">Quotidienne</option>
+                      <option value="weekly" data-i18n="recurrence_weekly">Hebdomadaire</option>
+                      <option value="every_x_months" data-i18n="recurrence_every_x_months">Tous les X mois</option>
+                      <option value="yearly" data-i18n="recurrence_yearly">Annuelle</option>
+                    </select>
 
                   <div class="recurrence-main-wrapper">
                     <div id="recurrence-scroll-options" class="recurrence-options-container">
 
                         <div id="weekly-options" style="display:none; margin-top:10px;">
+                            <div style="margin-bottom: 10px;">
+                                <label for="weekly-interval" data-i18n="recurrence_interval">Intervalle :</label>
+                                <select id="weekly-interval">
+                                  <option value="1">Chaque semaine</option>
+                                  <option value="2">Toutes les 2 semaines</option>
+                                  <option value="3">Toutes les 3 semaines</option>
+                                  <option value="4">Toutes les 4 semaines</option>
+                                </select>
+                              </div>
                             <span data-i18n="recurrence_days">Jours :</span>
                             <div class="weekly-grid">
                                 <div class="column">
@@ -9423,27 +9560,26 @@
 
                   <div id="monthly-options" style="display:none; margin-top:10px;">
                       <div style="margin-bottom: 10px; display: flex; gap: 20px;">
-                          <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="radio" id="monthly-type-fixed" name="monthly-type" value="fixed" checked>
-                            <span data-i18n="monthly_fixed_day">Jour fixe du mois</span>
-                          </label>
-
-                          <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="radio" id="monthly-type-relative" name="monthly-type" value="relative">
-                            <span data-i18n="monthly_relative_day">Jour relatif</span>
-                          </label>
-                        </div>
-
-                      <!-- Option Jour fixe (existant) -->
-                      <div id="monthly-fixed-options">
-                        <label for="recurrence-dayOfMonth" data-i18n="recurrence_day_of_month">Jour du mois :</label>
-                        <input type="number" id="recurrence-dayOfMonth" min="1" max="31" value="1">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                          <input type="radio" id="every-x-monthly-type-fixed" name="every-x-monthly-type" value="fixed" checked>
+                          <span data-i18n="monthly_fixed_day">Jour fixe du mois</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                          <input type="radio" id="every-x-monthly-type-relative" name="every-x-monthly-type" value="relative">
+                          <span data-i18n="monthly_relative_day">Jour relatif</span>
+                        </label>
                       </div>
 
-                      <!-- Nouvelle option Jour relatif -->
-                      <div id="monthly-relative-options" style="display:none; margin-top:10px;">
-                        <label for="recurrence-weekOfMonth" data-i18n="recurrence_week_of_month">Semaine :</label>
-                        <select id="recurrence-weekOfMonth">
+                      <!-- Option Jour fixe -->
+                      <div id="every-x-monthly-fixed-options">
+                        <label for="every-x-recurrence-dayOfMonth" data-i18n="recurrence_day_of_month">Jour du mois :</label>
+                        <input type="number" id="every-x-recurrence-dayOfMonth" min="1" max="31" value="1">
+                      </div>
+
+                      <!-- Option Jour relatif -->
+                      <div id="every-x-monthly-relative-options" style="display:none; margin-top:10px;">
+                        <label for="every-x-recurrence-weekOfMonth" data-i18n="recurrence_week_of_month">Semaine :</label>
+                        <select id="every-x-recurrence-weekOfMonth">
                           <option value="1" data-i18n="recurrence_first">Premier</option>
                           <option value="2" data-i18n="recurrence_second">Deuxième</option>
                           <option value="3" data-i18n="recurrence_third">Troisième</option>
@@ -9451,8 +9587,8 @@
                           <option value="last" data-i18n="recurrence_last">Dernier</option>
                         </select>
 
-                        <label for="recurrence-dayOfWeek" data-i18n="recurrence_day_of_week">Jour :</label>
-                        <select id="recurrence-dayOfWeek">
+                        <label for="every-x-recurrence-dayOfWeek" data-i18n="recurrence_day_of_week">Jour :</label>
+                        <select id="every-x-recurrence-dayOfWeek">
                           <option value="monday" data-i18n="day_monday">Lundi</option>
                           <option value="tuesday" data-i18n="day_tuesday">Mardi</option>
                           <option value="wednesday" data-i18n="day_wednesday">Mercredi</option>
