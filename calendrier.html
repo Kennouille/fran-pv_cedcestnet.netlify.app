@@ -5962,13 +5962,13 @@
                         });
 
 
-                        const observationsTextarea = row.querySelector('.observation-text');
-                        if (observationsTextarea) {
-                            observationsTextarea.addEventListener('blur', function() {
+                        const observationContent = row.querySelector('.observation-content');
+                        if (observationContent) {
+                            observationContent.addEventListener('blur', function() {
                                 applyChangesWithoutPrompt(row, false);
                             });
 
-                            observationsTextarea.addEventListener('keydown', function(e) {
+                            observationContent.addEventListener('keydown', function(e) {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
                                     this.blur();
