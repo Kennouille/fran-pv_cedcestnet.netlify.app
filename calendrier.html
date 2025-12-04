@@ -4340,6 +4340,29 @@
         lieuField.addEventListener('blur', transformerLieuEnLien);
         lieuField.addEventListener('click', handleLieuClick);
 
+        // Fonction d'auto-expansion pour le formulaire
+        function autoExpandFormTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+
+        // Initialiser le textarea du formulaire
+        const observationsTextarea = document.getElementById('Observations');
+        if (observationsTextarea) {
+            // Initialiser la hauteur
+            autoExpandFormTextarea(observationsTextarea);
+
+            // Auto-expansion à la saisie
+            observationsTextarea.addEventListener('input', function() {
+                autoExpandFormTextarea(this);
+            });
+
+            // Également au blur (pour copier-coller)
+            observationsTextarea.addEventListener('blur', function() {
+                autoExpandFormTextarea(this);
+            });
+        }
+
 
             let isCalendarGenerated = false;
             let isTodaySelected = false;
@@ -9323,7 +9346,12 @@
                         Autre : Voir Observations
                     </option>
                 </select>
-                <input type="text" id="Observations" placeholder="Observations" data-i18n-placeholder="placeholder_observations">
+                <textarea id="Observations"
+                  placeholder="Observations"
+                  data-i18n-placeholder="placeholder_observations"
+                  class="auto-expand-textarea-form"
+                  rows="3"
+                  style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;"></textarea>
                 <input type="number" id="NombreHeures" placeholder="Nombre d'heures" data-i18n-placeholder="placeholder_hours" min="0" step="0.25">
 
                 <!-- Ajoutez cette section après le select Travail -->
