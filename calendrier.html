@@ -722,6 +722,13 @@
                     ).join(', ') : 'Aucun jour';
                     return `Hebdomadaire (${days})`;
 
+                case 'biweekly':  // AJOUT
+                    const intervalWeeks = rule.interval || 2;
+                    const daysBiweekly = rule.days ? rule.days.map(day =>
+                        day.charAt(0).toUpperCase() + day.slice(1)
+                    ).join(', ') : 'Aucun jour';
+                    return `Toutes les ${intervalWeeks} semaines (${daysBiweekly})`;
+
                 case 'monthly':
                     if (rule.monthlyType === 'relative') {
                         const weekNames = {
@@ -736,6 +743,23 @@
                         return `Mensuelle (${weekNames[rule.weekOfMonth]} ${dayNames[rule.dayOfWeek]})`;
                     } else {
                         return `Mensuelle (Jour ${rule.dayOfMonth})`;
+                    }
+
+                case 'bimonthly':  // AJOUT
+                    const intervalMonths = rule.interval || 2;
+                    if (rule.monthlyType === 'relative') {
+                        const weekNames = {
+                            '1': 'Premier', '2': 'Deuxième', '3': 'Troisième',
+                            '4': 'Quatrième', 'last': 'Dernier'
+                        };
+                        const dayNames = {
+                            'monday': 'Lundi', 'tuesday': 'Mardi', 'wednesday': 'Mercredi',
+                            'thursday': 'Jeudi', 'friday': 'Vendredi', 'saturday': 'Samedi',
+                            'sunday': 'Dimanche'
+                        };
+                        return `Tous les ${intervalMonths} mois (${weekNames[rule.weekOfMonth]} ${dayNames[rule.dayOfWeek]})`;
+                    } else {
+                        return `Tous les ${intervalMonths} mois (Jour ${rule.dayOfMonth})`;
                     }
 
                 case 'yearly':
@@ -834,6 +858,20 @@
                 });
             }
 
+            else if (rule.frequency === 'biweekly') {  // AJOUT
+                // Remplir l'intervalle
+                if (rule.interval && document.getElementById('biweekly-interval')) {
+                    document.getElementById('biweekly-interval').value = rule.interval;
+                }
+                // Remplir les jours
+                if (rule.days) {
+                    rule.days.forEach(day => {
+                        const checkbox = document.querySelector(`#biweekly-options input[value="${day}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            }
+
             else if (rule.frequency === 'monthly') {
                 if (rule.monthlyType === 'fixed') {
                     document.getElementById('monthly-type-fixed').checked = true;
@@ -849,6 +887,30 @@
                     }
                     if (document.getElementById('recurrence-dayOfWeek')) {
                         document.getElementById('recurrence-dayOfWeek').value = rule.dayOfWeek || 'monday';
+                    }
+                }
+            }
+
+            else if (rule.frequency === 'bimonthly') {  // AJOUT
+                // Remplir l'intervalle
+                if (rule.interval && document.getElementById('bimonthly-interval')) {
+                    document.getElementById('bimonthly-interval').value = rule.interval;
+                }
+
+                if (rule.monthlyType === 'fixed') {
+                    document.getElementById('bimonthly-type-fixed').checked = true;
+                    document.getElementById('bimonthly-type-fixed').dispatchEvent(new Event('change'));
+                    if (document.getElementById('bimonthly-dayOfMonth')) {
+                        document.getElementById('bimonthly-dayOfMonth').value = rule.dayOfMonth || 1;
+                    }
+                } else {
+                    document.getElementById('bimonthly-type-relative').checked = true;
+                    document.getElementById('bimonthly-type-relative').dispatchEvent(new Event('change'));
+                    if (document.getElementById('bimonthly-weekOfMonth')) {
+                        document.getElementById('bimonthly-weekOfMonth').value = rule.weekOfMonth || '1';
+                    }
+                    if (document.getElementById('bimonthly-dayOfWeek')) {
+                        document.getElementById('bimonthly-dayOfWeek').value = rule.dayOfWeek || 'monday';
                     }
                 }
             }
@@ -1186,6 +1248,21 @@
                     }
                     current.setDate(current.getDate() + 1);
                 }
+                else if (rule.frequency === "biweekly") {  // AJOUT
+                    const dayIndex = current.getDay();
+                    if (ruleDayIndices.includes(dayIndex)) {
+                        // Calculer le nombre de semaines depuis la date de début
+                        const diffInTime = current - startDate;
+                        const diffInWeeks = Math.floor(diffInTime / (1000 * 60 * 60 * 24 * 7));
+                        const interval = rule.interval || 2;
+
+                        // Vérifier si on est à un multiple de l'intervalle
+                        if (diffInWeeks % interval === 0) {
+                            results.push(formatDateLocal(current));
+                        }
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
                 else if (rule.frequency === "monthly") {
                     let targetDate;
                     if (rule.monthlyType === "relative") {
@@ -1199,6 +1276,22 @@
                         results.push(formatDateLocal(targetDate));
                     }
                     current.setMonth(current.getMonth() + 1);
+                }
+                else if (rule.frequency === "bimonthly") {  // AJOUT
+                    let targetDate;
+                    if (rule.monthlyType === "relative") {
+                        targetDate = calculateRelativeMonthlyDate(current, rule.weekOfMonth, rule.dayOfWeek);
+                    } else {
+                        targetDate = new Date(current);
+                        targetDate.setDate(rule.dayOfMonth || current.getDate());
+                    }
+
+                    if (targetDate && targetDate >= startDate && targetDate <= endDate) {
+                        results.push(formatDateLocal(targetDate));
+                    }
+                    // Incrémenter par l'intervalle (2, 3, ou 4 mois)
+                    const interval = rule.interval || 2;
+                    current.setMonth(current.getMonth() + interval);
                 }
                 else if (rule.frequency === "yearly") {
                     const temp = new Date(current);
@@ -3683,9 +3776,48 @@
                     }
                 }
 
+                if (frequency === "biweekly") {
+                    recurrence_rule = { frequency: "biweekly" };
+
+                    // Récupérer l'intervalle
+                    const biweeklyInterval = document.getElementById("biweekly-interval")?.value;
+                    if (biweeklyInterval) recurrence_rule.interval = parseInt(biweeklyInterval, 10);
+
+                    // Récupérer les jours sélectionnés
+                    const selectedDays = Array.from(document.querySelectorAll("#biweekly-options input[type=checkbox]:checked"))
+                        .map(cb => cb.value);
+                    if (selectedDays.length > 0) recurrence_rule.days = selectedDays;
+                }
+
+                if (frequency === "bimonthly") {
+                    recurrence_rule = { frequency: "bimonthly" };
+
+                    // Récupérer l'intervalle
+                    const bimonthlyInterval = document.getElementById("bimonthly-interval")?.value;
+                    if (bimonthlyInterval) recurrence_rule.interval = parseInt(bimonthlyInterval, 10);
+
+                    // Récupérer le type mensuel
+                    const monthlyType = document.querySelector('input[name="bimonthly-type"]:checked')?.value || "fixed";
+                    recurrence_rule.monthlyType = monthlyType;
+
+                    if (monthlyType === "fixed") {
+                        const dayOfMonth = document.getElementById("bimonthly-dayOfMonth")?.value;
+                        if (dayOfMonth) recurrence_rule.dayOfMonth = parseInt(dayOfMonth, 10);
+                    } else {
+                        // Type "relative" - jour relatif
+                        const weekOfMonth = document.getElementById("bimonthly-weekOfMonth")?.value;
+                        const dayOfWeek = document.getElementById("bimonthly-dayOfWeek")?.value;
+
+                        if (weekOfMonth && dayOfWeek) {
+                            recurrence_rule.weekOfMonth = weekOfMonth;
+                            recurrence_rule.dayOfWeek = dayOfWeek;
+                        }
+                    }
+                }
+
+                // La gestion de endDate reste la même pour toutes les fréquences
                 const endDate = document.getElementById("recurrence-endDate")?.value;
                 if (endDate) recurrence_rule.endDate = endDate;
-            }
 
 
 
@@ -4502,16 +4634,44 @@
             document.getElementById("weekly-options").style.display = "none";
             document.getElementById("monthly-options").style.display = "none";
             document.getElementById("yearly-options").style.display = "none";
+            document.getElementById("biweekly-options").style.display = "none";  // AJOUT
+            document.getElementById("bimonthly-options").style.display = "none";  // AJOUT
 
             // Montrer seulement le bon
             if (frequency === "weekly") {
-              document.getElementById("weekly-options").style.display = "block";
+                document.getElementById("weekly-options").style.display = "block";
+            } else if (frequency === "biweekly") {  // AJOUT
+                document.getElementById("biweekly-options").style.display = "block";
             } else if (frequency === "monthly") {
-              document.getElementById("monthly-options").style.display = "block";
+                document.getElementById("monthly-options").style.display = "block";
+            } else if (frequency === "bimonthly") {  // AJOUT
+                document.getElementById("bimonthly-options").style.display = "block";
             } else if (frequency === "yearly") {
-              document.getElementById("yearly-options").style.display = "block";
+                document.getElementById("yearly-options").style.display = "block";
             }
         });
+
+        // Gérer l'affichage pour bimonthly-type
+        document.querySelectorAll('input[name="bimonthly-type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isFixed = this.value === "fixed";
+                if (document.getElementById("bimonthly-fixed-options")) {
+                    document.getElementById("bimonthly-fixed-options").style.display = isFixed ? "block" : "none";
+                }
+                if (document.getElementById("bimonthly-relative-options")) {
+                    document.getElementById("bimonthly-relative-options").style.display = isFixed ? "none" : "block";
+                }
+            });
+        });
+
+        // Initialiser au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const bimonthlyFixedRadio = document.getElementById("bimonthly-type-fixed");
+            if (bimonthlyFixedRadio && bimonthlyFixedRadio.checked) {
+                bimonthlyFixedRadio.dispatchEvent(new Event('change'));
+            }
+        });
+
 
         // Gestion de la bascule entre jour fixe et jour relatif pour la récurrence mensuelle
         document.getElementById("monthly-type-fixed").addEventListener("change", (e) => {
