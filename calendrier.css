@@ -1102,34 +1102,27 @@ td[data-column="Observations"] {
   background: #c6282
 }
 
-/* ---------- Fix complet pour la grille hebdo (collage unique) ---------- */
-.weekly-grid {
+.weekly-days-grid {
   display: flex;
-  justify-content: flex-start; /* ou center si tu préfères */
-  gap: 100px;                   /* espace entre colonnes */
+  justify-content: center;
+  gap: 100px;
   margin-top: 10px;
   flex-wrap: nowrap;
-  align-items: flex-start;      /* évite que les labels se centrent verticalement et chevauchent */
-  width: max-content;           /* permet au parent scrollable d'afficher correctement */
 }
 
-/* colonne : forcer une largeur minimale stable */
-.weekly-grid .column {
+.weekly-days-grid .column {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 140px;   /* règle clé : ajuste la largeur des colonnes */
-  box-sizing: border-box;
 }
 
-/* labels : texte + checkbox sur la même ligne, pas de retour auto */
-.weekly-grid label {
-  display: inline-flex;    /* garde texte + checkbox côte à côte */
+.weekly-days-grid label {
+  display: flex;
   align-items: center;
   gap: 10px;
-  white-space: nowrap;     /* empêche le texte de retourner et casser la mis en page */
-  font-size: 14px;
+  white-space: nowrap;
 }
+
 
 /* neutraliser la règle globale width:100% seulement DANS la grille */
 .weekly-grid input,
