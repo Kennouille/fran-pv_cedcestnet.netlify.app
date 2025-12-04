@@ -1105,22 +1105,20 @@ td[data-column="Observations"] {
 /* --------- Grid des jours --------- */
 .weekly-grid {
   display: flex;
-  justify-content: flex-start; /* laisse les colonnes à gauche, gap sera appliqué */
-  gap: 300px;                   /* espace voulu entre colonnes */
+  justify-content: center; /* centré proprement */
+  gap: 60px;               /* espace correct entre colonnes */
   margin-top: 10px;
-
-  flex-wrap: nowrap;            /* empêche wrapping pour garder 2 colonnes côte à côte */
-  width: max-content;           /* largeur basée sur le contenu -> permet le scroll parent */
+  flex-wrap: nowrap;
 }
 
-/* --------- Chaque colonne doit avoir une largeur minimale --------- */
 .weekly-grid .column {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 300px; /* ← ajuste cette valeur selon l'espace que tu veux par colonne */
+  min-width: auto; /* IMPORTANT : enlève l’élargissement forcé */
   box-sizing: border-box;
 }
+
 
 .weekly-grid label {
   display: flex;
