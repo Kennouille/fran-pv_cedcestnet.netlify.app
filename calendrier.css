@@ -1136,7 +1136,7 @@ td[data-column="Observations"] {
   display: inline-block;     /* s'assure qu'ils restent à côté du texte */
   vertical-align: middle;
   box-sizing: content-box;
-  margin: 0;                 /* si tu veux ajuster l'espacement, fais-le ici */
+  margin: 50;                 /* si tu veux ajuster l'espacement, fais-le ici */
 }
 
 
