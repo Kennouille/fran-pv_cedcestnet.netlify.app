@@ -401,18 +401,27 @@
         }
 
         async function loadEmployees() {
-          const { data, error } = await supabase
-            .from("access_code1_fran")
-            .select("Nom"); // On récupère seulement la colonne Nom
+            const { data, error } = await supabase
+                .from("access_code1_fran")
+                .select("Nom, color"); // Ajout de "color" à la sélection
 
-          if (error) {
-            console.error("Erreur récupération employés:", error);
-            return;
-          }
+            if (error) {
+                console.error("Erreur récupération employés:", error);
+                return;
+            }
 
-          // On garde le tableau simple de noms
-          employeeNames = data.map(emp => emp.Nom);
-          console.log("Noms des employés récupérés :", employeeNames);
+            // On garde le tableau simple de noms
+            employeeNames = data.map(emp => emp.Nom);
+            console.log("Noms des employés récupérés :", employeeNames);
+
+            // Stocker les couleurs dans un objet global
+            window.employeeColors = {};
+            data.forEach(emp => {
+                if (emp.Nom && emp.color) {
+                    window.employeeColors[emp.Nom] = emp.color;
+                }
+            });
+            console.log("Couleurs employés chargées :", window.employeeColors);
         }
 
         // Fonction pour peupler le select des employés
@@ -8254,32 +8263,15 @@
         function getColorForEmployee(employeeName) {
             if (!employeeName) return '#95a5a6'; // Gris par défaut si pas d'employé
 
-            // Vérifier si employeeNames est chargé
-            if (!employeeNames || employeeNames.length === 0) {
-                console.warn('⚠️ Liste des employés non chargée, chargement en cours...');
-                return generateColorFromName(employeeName); // Couleur de secours
+            // Vérifier si window.employeeColors existe et contient une couleur pour cet employé
+            if (window.employeeColors && window.employeeColors[employeeName]) {
+                console.log(`✅ Couleur configurée trouvée pour ${employeeName}: ${window.employeeColors[employeeName]}`);
+                return window.employeeColors[employeeName];
             }
 
-            // Palette de couleurs prédéfinies (assez large)
-            const colorPalette = [
-                '#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#f39c12',
-                '#1abc9c', '#d35400', '#34495e', '#e84393', '#00cec9',
-                '#0984e3', '#e17055', '#00b894', '#6c5ce7', '#fdcb6e',
-                '#e84393', '#00cec9', '#fd79a8', '#a29bfe', '#55efc4',
-                '#81ecec', '#74b9ff', '#ffeaa7', '#fab1a0', '#ff7675',
-                '#636e72', '#dfe6e9', '#b2bec3', '#f5f5f5', '#2d3436'
-            ];
-
-            // Trouver l'index de l'employé dans la liste
-            const employeeIndex = employeeNames.indexOf(employeeName);
-
-            if (employeeIndex === -1) {
-                console.warn(`⚠️ Employé "${employeeName}" non trouvé dans la liste`);
-                return generateColorFromName(employeeName);
-            }
-
-            // Utiliser une couleur de la palette (répétition si plus d'employés que de couleurs)
-            return colorPalette[employeeIndex % colorPalette.length];
+            // Si pas de couleur configurée, utiliser le gris par défaut
+            console.log(`⚪ Couleur par défaut pour ${employeeName}`);
+            return '#95a5a6';
         }
 
         // Fonction de secours pour générer une couleur à partir du nom

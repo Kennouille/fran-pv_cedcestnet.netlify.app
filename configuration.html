@@ -66,7 +66,8 @@
                 <th data-translate="th_statistics">Statistiques</th>
                 <th data-translate="th_daily">Quotidien</th>
                 <th data-translate="th_configuration">Configuration</th>
-                <th data-translate="th_history">Historique</th> <!-- ✅ Nouveau -->
+                <th data-translate="th_history">Historique</th>
+                <th data-translate="th_color">Couleur</th> <!-- ✅ NOUVELLE COLONNE -->
                 <th>ID Geodynamics</th>
                 <th>Sync</th>
                 <th data-translate="th_actions">Actions</th>
@@ -78,11 +79,12 @@
     <h2 data-translate="add_new_user_title">Ajouter un nouvel utilisateur</h2>
     <input type="text" id="newUserName" data-translate-placeholder="placeholder_name" placeholder="Nom">
     <input type="text" id="newUserCode" data-translate-placeholder="placeholder_code" placeholder="Code">
+    <input type="color" id="newUserColor" value="#3498db" title="Choisir une couleur">
     <input type="checkbox" id="newUserCalendrier"> <span data-translate="th_calendar">Calendrier</span>
     <input type="checkbox" id="newUserStatistiques"> <span data-translate="th_statistics">Statistiques</span>
     <input type="checkbox" id="newUserQuotidien"> <span data-translate="th_daily">Quotidien</span>
     <input type="checkbox" id="newUserConfiguration"> <span data-translate="th_configuration">Configuration</span>
-    <input type="checkbox" id="newUserHistorique"> <span data-translate="th_history">Historique</span> <!-- ✅ Nouveau -->
+    <input type="checkbox" id="newUserHistorique"> <span data-translate="th_history">Historique</span>
     <button onclick="addUser()" data-translate="add_user_button">Ajouter Utilisateur</button>
 
 

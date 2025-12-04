@@ -302,6 +302,19 @@ function renderUserRow(user, currentRole) {
         row.appendChild(cell);
     });
 
+    // Colonne Couleur (après Historique)
+    const colorCell = document.createElement('td');
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = user.color || '#3498db'; // Valeur par défaut si pas de couleur
+
+    // Si je ne suis pas Admin → je ne peux pas modifier la ligne Admin
+    if (user.Nom === "Admin" && currentRole !== "Admin") {
+        colorInput.disabled = true;
+    }
+    colorCell.appendChild(colorInput);
+    row.appendChild(colorCell);
+
     // --- Colonnes Geodynamics ---
     const geoIdCell = document.createElement('td');
     const geoIdInput = document.createElement('input');
@@ -383,8 +396,9 @@ async function updateUser(id_code, name, code, row) {
         Quotidien: row.children[4].querySelector('input').checked,
         Configuration: row.children[5].querySelector('input').checked,
         Historique: row.children[6].querySelector('input').checked,
-        geodynamics_id: row.children[7].querySelector('input').value.trim() || null,
-        geodynamics_sync: row.children[8].querySelector('input').checked
+        color: row.children[7].querySelector('input').value, // NOUVELLE LIGNE - couleur
+        geodynamics_id: row.children[8].querySelector('input').value.trim() || null, // Changé de 7 à 8
+        geodynamics_sync: row.children[9].querySelector('input').checked // Changé de 8 à 9
     };
 
     const { error } = await supabase.from('access_code1_fran').update(accessData).eq('id_code', id_code);
@@ -430,6 +444,7 @@ window.addUser = addUser;
 async function addUser() {
     const nameField = document.getElementById("newUserName");
     const codeField = document.getElementById("newUserCode");
+    const colorField = document.getElementById("newUserColor"); // NOUVEAU CHAMP
     const calendrierField = document.getElementById("newUserCalendrier");
     const statistiquesField = document.getElementById("newUserStatistiques");
     const quotidienField = document.getElementById("newUserQuotidien");
@@ -445,6 +460,7 @@ async function addUser() {
     const userInput = {
         Nom: nameField.value.trim(),
         Code: codeField.value.trim(),
+        color: colorField.value, // NOUVELLE LIGNE
         Calendrier: calendrierField.checked,
         Statistiques: statistiquesField.checked,
         Quotidien: quotidienField.checked,
@@ -472,6 +488,7 @@ async function addUser() {
             // Réinitialiser les champs du formulaire après l'ajout
             nameField.value = '';
             codeField.value = '';
+            colorField.value = '#3498db'; // NOUVELLE LIGNE - réinitialiser à la valeur par défaut
             calendrierField.checked = false;
             statistiquesField.checked = false;
             quotidienField.checked = false;
