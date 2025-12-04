@@ -1105,8 +1105,8 @@ td[data-column="Observations"] {
 /* --------- Grid des jours --------- */
 .weekly-grid {
   display: flex;
-  justify-content: center; /* centré proprement */
-  gap: 100px;               /* espace correct entre colonnes */
+  justify-content: center;
+  gap: 100px;
   margin-top: 10px;
   flex-wrap: nowrap;
 }
@@ -1115,31 +1115,31 @@ td[data-column="Observations"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: auto; /* IMPORTANT : enlève l’élargissement forcé */
+  min-width: auto;
   box-sizing: border-box;
 }
 
-
 /* Assure que le texte et la checkbox restent côte à côte */
 .weekly-grid label {
-  gap: 10px;                 /* déjà présent mais on le confirme */
+  display: flex;
   align-items: center;
-  white-space: nowrap;       /* empêche les retours de ligne indésirables dans le label */
+  gap: 10px;
+  white-space: nowrap;
 }
 
-/* Corrige les checkboxes et inputs des labels de la grille hebdo */
+/* Empêche les checkboxes de s'étirer sur toute la largeur */
 .weekly-grid input,
 .weekly-grid input[type="checkbox"],
 .weekly-grid label input {
-  width: auto !important;    /* annule le width:100% global */
+  width: auto !important;
   max-width: none !important;
-  display: inline-block;     /* s'assure qu'ils restent à côté du texte */
+  display: inline-block;
   vertical-align: middle;
   box-sizing: content-box;
-  margin: 50;                 /* si tu veux ajuster l'espacement, fais-le ici */
+
+  /* ❌ CORRIGÉ : aucune marge abusive */
+  margin: 0 !important;
 }
-
-
 
 
 .popup {
