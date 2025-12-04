@@ -4226,16 +4226,30 @@
         function formatSimpleMarkdown(text) {
             if (!text || text.trim() === '') return null;
 
+            // Étape 1: Protéger les marqueurs de formatage avant de traiter les sauts de ligne
             let formattedText = text;
 
-            // Convertir **texte** en <strong>texte</strong>
-            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Étape 2: Traiter d'abord les sauts de ligne DOUBLES (paragraphes)
+            // Convertir deux retours à la ligne ou plus en <br><br>
+            formattedText = formattedText.replace(/\n\s*\n/g, '<br><br>');
 
-            // Convertir [yellow]texte[/yellow] en jaune fluo
-            formattedText = formattedText.replace(/\[yellow\](.*?)\[\/yellow\]/g, '<span style="background-color: yellow; padding: 1px 3px; border-radius: 2px;">$1</span>');
+            // Étape 3: Traiter les sauts de ligne simples (à l'intérieur des paragraphes)
+            // Ne pas convertir les \n qui sont à l'intérieur de [yellow]...[/yellow] ou **...**
+            // On va faire une conversion prudente
+            formattedText = formattedText.replace(/([^\n])\n([^\n])/g, '$1<br>$2');
 
-            // Convertir les sauts de ligne
-            formattedText = formattedText.replace(/\n/g, '<br>');
+            // Étape 4: Convertir **texte** en <strong>texte</strong>
+            // Faire en plusieurs passes pour éviter les conflits
+            formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // Étape 5: Convertir [yellow]texte[/yellow] en surlignage
+            formattedText = formattedText.replace(/\[yellow\](.*?)\[\/yellow\]/g, function(match, content) {
+                // Ne pas modifier le contenu à l'intérieur
+                return '<span style="background-color: yellow; padding: 1px 3px; border-radius: 2px;">' + content + '</span>';
+            });
+
+            // Étape 6: Nettoyer les doubles <br> qui pourraient être créés
+            formattedText = formattedText.replace(/<br>\s*<br>/g, '<br><br>');
 
             return formattedText;
         }
@@ -4567,10 +4581,10 @@
 
                     if (tag === 'strong') {
                         wrappedText = `**${selectedText}**`;
-                        newCursorPos = start + 2; // Place le curseur après **
+                        newCursorPos = start + 2;
                     } else if (style === 'yellow') {
                         wrappedText = `[yellow]${selectedText}[/yellow]`;
-                        newCursorPos = start + 8; // Place le curseur après [yellow]
+                        newCursorPos = start + 8;
                     }
 
                     const newText = text.substring(0, start) + wrappedText + text.substring(end);
@@ -5512,9 +5526,12 @@
                             `}
                         </td>
                         <td data-column="Observations">
-                            <textarea class="observation-text auto-expand-textarea"
-                                      data-field="observations"
-                                      rows="2">${event.Observations || ''}</textarea>
+                            <div class="observation-content editable-observations"
+                                 contenteditable="true"
+                                 data-field="observations"
+                                 style="min-height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; overflow-y: auto; max-height: 200px; white-space: pre-wrap; line-height: 1.4;">
+                                ${event.Observations || ''}
+                            </div>
 
                             <!-- Case à cocher pour photos obligatoires (seulement pour configuser) -->
                             ${isConfigUser ? `
@@ -7784,7 +7801,7 @@
                     lieu: cells[5].textContent,
                     prix: cells[6].textContent,
                     travail: cells[7].textContent,
-                    observations: row.querySelector('textarea.observation-text')?.value || '',
+                    observations: row.querySelector('.observation-content')?.innerHTML || '',
                     photo_avant_url: row.querySelector('.photo-avant')?.src || null,
                     photo_apres_url: row.querySelector('.photo-apres')?.src || null,
                     nombre_heures: cells[9].textContent,

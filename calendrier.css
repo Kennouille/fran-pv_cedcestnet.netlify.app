@@ -2449,3 +2449,21 @@ td[data-column="Observations"] {
 #bimonthly-options {
     /* Aucun style supplémentaire - ils hériteront des styles existants */
 }
+
+/* Style pour les observations formatées */
+.observation-content strong {
+    font-weight: bold !important;
+}
+
+.observation-content span[style*="background-color: yellow"] {
+    background-color: yellow !important;
+    padding: 1px 3px !important;
+    border-radius: 2px !important;
+    display: inline-block !important;
+}
+
+/* Conserver les retours à ligne */
+.observation-content {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+}
