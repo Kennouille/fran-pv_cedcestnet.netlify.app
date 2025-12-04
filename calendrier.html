@@ -6347,25 +6347,25 @@
                           Array.from(row.cells).forEach(cell => {
                             const column = cell.dataset.column;
                             if (column) {
-                              let cellValue;
-                              let ancienneValeur = rendezvousActuel[column];
+                                let cellValue;
+                                let ancienneValeur = rendezvousActuel[column];
 
-                              // --- RÉCUPÉRATION DE LA VALEUR CORRECTE ---
-                              if (column === "Observations") {
-                                const textarea = row.querySelector('[data-field="observations"]');
-                                cellValue = textarea ? textarea.value.trim() : "";
-                              } else if (column === "Travail") {
-                                // ✅ Cible le SELECT dans la cellule Travail
-                                const select = cell.querySelector('[data-field="StatutTravail"]');
-                                cellValue = select ? select.value.trim() : "";
-
-                                // La colonne Travail stocke un objet JSON dans la BDD (même si nous n'avons qu'une clé).
-                                // Il faut donc s'assurer que `ancienneValeur` est bien l'objet Travail.
-                                ancienneValeur = rendezvousActuel.Travail;
-                              } else {
-                                cellValue = cell.textContent.trim();
-                              }
-                              // ------------------------------------------
+                                // --- RÉCUPÉRATION DE LA VALEUR CORRECTE ---
+                                if (column === "Observations") {
+                                    // ESSAIE D'ABORD LE DIV, PUIS LE TEXTAREA
+                                    const observationDiv = row.querySelector('.observation-content');
+                                    const textarea = row.querySelector('textarea[data-field="observations"]');
+                                    cellValue = observationDiv ?
+                                                observationDiv.innerHTML.trim() :
+                                                (textarea ? textarea.value.trim() : "");
+                                } else if (column === "Travail") {
+                                    const select = cell.querySelector('[data-field="StatutTravail"]');
+                                    cellValue = select ? select.value.trim() : "";
+                                    ancienneValeur = rendezvousActuel.Travail;
+                                } else {
+                                    // CORRECTION : Protection contre undefined/null
+                                    cellValue = (cell.textContent || '').trim();
+                                }
 
                               // GESTION DES VALEURS VIDES/NULL ET CONVERSION
                               if (column === 'Prix') {
