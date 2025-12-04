@@ -6224,19 +6224,15 @@
                 }); // Fermeture du forEach(event => { ... });
 
                 // Fonction pour auto-expander les textareas d'observations
-                function autoExpandTextarea(textarea) {
-                    // Réinitialiser les dimensions
+                 function autoExpandTextarea(textarea) {
+                    // Largeur fixe à 100% de la cellule
+                    textarea.style.width = '100%';
+                    textarea.style.boxSizing = 'border-box';
+
+                    // Hauteur qui s'adapte au contenu
                     textarea.style.height = 'auto';
-                    textarea.style.width = 'auto';
-
-                    // Calculer les nouvelles dimensions
-                    const scrollHeight = textarea.scrollHeight;
-                    const scrollWidth = textarea.scrollWidth;
-
-                    // Appliquer les nouvelles dimensions (avec des limites)
-                    textarea.style.height = Math.min(scrollHeight, 400) + 'px'; // Max 400px de hauteur
-                    textarea.style.width = Math.min(scrollWidth, 800) + 'px';   // Max 800px de largeur
-                }
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
+                 }
 
                 // Initialiser l'auto-expansion pour tous les textareas
                 document.querySelectorAll('.auto-expand-textarea').forEach(textarea => {
