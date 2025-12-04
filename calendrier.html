@@ -5189,8 +5189,9 @@
                             `}
                         </td>
                         <td data-column="Observations">
-                            <textarea class="observation-text"
-                                      data-field="observations">${event.Observations || ''}</textarea>
+                            <textarea class="observation-text auto-expand-textarea"
+                                      data-field="observations"
+                                      rows="1">${event.Observations || ''}</textarea>
 
                             <!-- Case à cocher pour photos obligatoires (seulement pour configuser) -->
                             ${isConfigUser ? `
@@ -6186,6 +6187,28 @@
 
 
                 }); // Fermeture du forEach(event => { ... });
+
+                // Fonction pour auto-expander les textareas d'observations
+                function autoExpandTextarea(textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
+                }
+
+                // Initialiser l'auto-expansion pour tous les textareas
+                document.querySelectorAll('.auto-expand-textarea').forEach(textarea => {
+                    // Initialiser la hauteur
+                    autoExpandTextarea(textarea);
+
+                    // Auto-expansion à la saisie
+                    textarea.addEventListener('input', function() {
+                        autoExpandTextarea(this);
+                    });
+
+                    // Également à chaque blur (au cas où le contenu change via copier-coller)
+                    textarea.addEventListener('blur', function() {
+                        autoExpandTextarea(this);
+                    });
+                });
 
 
                 return data;
