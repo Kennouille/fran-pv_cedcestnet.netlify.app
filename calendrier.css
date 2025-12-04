@@ -1103,20 +1103,21 @@ td[data-column="Observations"] {
 }
 
 /* METS CE CODE et supprime tout le reste sur .weekly-grid */
+/* FORCE avec !important */
 .weekly-grid {
-    display: flex;
-    justify-content: center;
-    gap: 50px;
-    margin: 10px auto;
-    width: fit-content;    /* IMPORTANT : ne prend que la place nécessaire */
-    max-width: 100%;       /* Mais ne dépasse pas le parent */
+    display: flex !important;
+    justify-content: center !important;
+    gap: 50px !important;
+    margin: 10px auto !important;
+    width: fit-content !important;
+    max-width: 100% !important;
 }
 
 .weekly-grid .column {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-shrink: 0;        /* IMPORTANT : empêche le rétrécissement */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
 }
 
 .weekly-grid label {
