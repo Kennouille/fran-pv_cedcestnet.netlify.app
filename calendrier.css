@@ -1106,7 +1106,7 @@ td[data-column="Observations"] {
 .weekly-grid {
   display: flex;
   justify-content: flex-start; /* laisse les colonnes à gauche, gap sera appliqué */
-  gap: 300px;                   /* espace voulu entre colonnes */
+  gap: 100px;                   /* espace voulu entre colonnes */
   margin-top: 10px;
 
   flex-wrap: nowrap;            /* empêche wrapping pour garder 2 colonnes côte à côte */
@@ -1118,7 +1118,7 @@ td[data-column="Observations"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 140px; /* ← ajuste cette valeur selon l'espace que tu veux par colonne */
+  min-width: 300px; /* ← ajuste cette valeur selon l'espace que tu veux par colonne */
   box-sizing: border-box;
 }
 
