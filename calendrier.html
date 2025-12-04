@@ -5527,11 +5527,11 @@
                         </td>
                         <td data-column="Observations">
                             <!-- DIV avec auto-expansion -->
-                            <div class="observation-content auto-expand-textarea"
+                            <div class="observation-content"
                                  contenteditable="true"
                                  data-field="observations"
-                                 style="min-height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; white-space: pre-wrap; overflow: hidden; resize: vertical;"
-                                 oninput="autoExpandTextarea(this)">
+                                 style="min-height: 60px; height: auto; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; white-space: pre-wrap; overflow: hidden;"
+                                 oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,250)+'px';">
                                 ${event.Observations || ''}
                             </div>
 
@@ -5637,25 +5637,13 @@
 
                     `;
 
-                    // Auto-expansion IMMÉDIATE pour observations
-                    const obsDiv = row.querySelector('.observation-content');
-                    if (obsDiv) {
-                        // Force le rendu d'abord
-                        obsDiv.style.display = 'none';
-                        obsDiv.offsetHeight; // Force reflow
-                        obsDiv.style.display = '';
-
-                        // Définir la hauteur
-                        const height = Math.min(obsDiv.scrollHeight, 250);
-                        obsDiv.style.height = height + 'px';
-                        obsDiv.style.overflowY = 'hidden';
-
-                        // Événement pour futur
-                        obsDiv.addEventListener('input', function() {
-                            this.style.height = 'auto';
-                            this.style.height = Math.min(this.scrollHeight, 250) + 'px';
-                        });
-                    }
+                   const obsDiv = row.querySelector('.observation-content');
+                        if (obsDiv) {
+                            obsDiv.style.height = 'auto';
+                            setTimeout(() => {
+                                obsDiv.style.height = Math.min(obsDiv.scrollHeight, 250) + 'px';
+                            }, 10);
+                        }
 
                     // ✅ Charger l'historique de pointage ONSS pour cette ligne
                     loadPointageHistory(row);
