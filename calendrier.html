@@ -6237,7 +6237,7 @@
                     const newWidth = currentWidth + (neededHeight - parseFloat(getComputedStyle(textarea).height));
 
                     // Appliquer les nouvelles dimensions (avec limites raisonnables)
-                    textarea.style.height = Math.min(neededHeight, 200) + 'px'; // Max 400px
+                    textarea.style.height = Math.min(neededHeight, 220) + 'px'; // Max 400px
                     textarea.style.width = Math.max(newWidth, 200) + 'px';      // Min 200px, s'élargit avec la hauteur
                 }
 
