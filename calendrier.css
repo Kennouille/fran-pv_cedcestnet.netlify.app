@@ -1106,7 +1106,7 @@ td[data-column="Observations"] {
 .weekly-grid {
   display: flex;
   justify-content: center; /* centré proprement */
-  gap: 60px;               /* espace correct entre colonnes */
+  gap: 100px;               /* espace correct entre colonnes */
   margin-top: 10px;
   flex-wrap: nowrap;
 }
