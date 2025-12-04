@@ -4980,7 +4980,19 @@
                 ];
 
                 data.sort((a, b) => {
-                    return heureOrder.indexOf(a.Heure) - heureOrder.indexOf(b.Heure);
+                    // 1. Comparer d'abord les heures
+                    const hourComparison = heureOrder.indexOf(a.Heure) - heureOrder.indexOf(b.Heure);
+
+                    // 2. Si les heures sont identiques, comparer les minutes
+                    if (hourComparison === 0 && a.Heure === b.Heure) {
+                        // Convertir les minutes en nombres (null ou vide = 0)
+                        const minutesA = a.Min ? parseInt(a.Min) : 0;
+                        const minutesB = b.Min ? parseInt(b.Min) : 0;
+
+                        return minutesA - minutesB;
+                    }
+
+                    return hourComparison;
                 });
 
                 // Fonction pour ouvrir une boîte de dialogue avec les messages WhatsApp disponibles
