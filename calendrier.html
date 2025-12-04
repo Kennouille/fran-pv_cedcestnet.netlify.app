@@ -6225,20 +6225,8 @@
 
                 // Fonction pour auto-expander les textareas d'observations
                 function autoExpandTextarea(textarea) {
-                    // Réinitialiser les dimensions
                     textarea.style.height = 'auto';
-                    textarea.style.width = 'auto';
-
-                    // Obtenir la hauteur nécessaire pour le contenu
-                    const neededHeight = textarea.scrollHeight;
-
-                    // Calculer la largeur correspondante (ajoute la même valeur qu'en hauteur)
-                    const currentWidth = parseFloat(getComputedStyle(textarea).width);
-                    const newWidth = currentWidth + (neededHeight - parseFloat(getComputedStyle(textarea).height));
-
-                    // Appliquer les nouvelles dimensions (avec limites raisonnables)
-                    textarea.style.height = Math.min(neededHeight, 400) + 'px'; // Max 400px
-                    textarea.style.width = Math.max(newWidth, 100) + 'px';      // Min 200px, s'élargit avec la hauteur
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
                 }
 
                 // Initialiser l'auto-expansion pour tous les textareas
