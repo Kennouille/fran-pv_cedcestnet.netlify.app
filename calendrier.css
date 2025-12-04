@@ -1106,7 +1106,7 @@ td[data-column="Observations"] {
 .weekly-grid {
   display: flex;
   justify-content: flex-start; /* laisse les colonnes à gauche, gap sera appliqué */
-  gap: 100px;                   /* espace voulu entre colonnes */
+  gap: 300px;                   /* espace voulu entre colonnes */
   margin-top: 10px;
 
   flex-wrap: nowrap;            /* empêche wrapping pour garder 2 colonnes côte à côte */
