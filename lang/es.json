@@ -617,7 +617,8 @@
   "field_work_temp": "Temperatura",
   "field_observations": "Observaciones",
   "field_paid": "Pagado",
-  "field_data_sent": "Datos enviados"
+  "field_data_sent": "Datos enviados",
+  "th_color": "Color"
 
 
 
