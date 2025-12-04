@@ -1102,44 +1102,66 @@ td[data-column="Observations"] {
   background: #c6282
 }
 
-/* --------- Grid des jours --------- */
+/* ---------- Fix complet pour la grille hebdo (collage unique) ---------- */
 .weekly-grid {
   display: flex;
-  justify-content: center;
-  gap: 100px;
+  justify-content: flex-start; /* ou center si tu préfères */
+  gap: 100px;                   /* espace entre colonnes */
   margin-top: 10px;
   flex-wrap: nowrap;
+  align-items: flex-start;      /* évite que les labels se centrent verticalement et chevauchent */
+  width: max-content;           /* permet au parent scrollable d'afficher correctement */
 }
 
+/* colonne : forcer une largeur minimale stable */
 .weekly-grid .column {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: auto;
+  min-width: 140px;   /* règle clé : ajuste la largeur des colonnes */
   box-sizing: border-box;
 }
 
-/* Assure que le texte et la checkbox restent côte à côte */
+/* labels : texte + checkbox sur la même ligne, pas de retour auto */
 .weekly-grid label {
-  display: flex;
+  display: inline-flex;    /* garde texte + checkbox côte à côte */
   align-items: center;
   gap: 10px;
-  white-space: nowrap;
+  white-space: nowrap;     /* empêche le texte de retourner et casser la mis en page */
+  font-size: 14px;
 }
 
-/* Empêche les checkboxes de s'étirer sur toute la largeur */
+/* neutraliser la règle globale width:100% seulement DANS la grille */
 .weekly-grid input,
-.weekly-grid input[type="checkbox"],
-.weekly-grid label input {
-  width: auto !important;
+.weekly-grid select,
+.weekly-grid textarea {
+  width: auto !important;      /* annule width:100% global */
   max-width: none !important;
   display: inline-block;
   vertical-align: middle;
+  margin: 0 !important;        /* évite marges bizarres (ton "margin:50" était invalide) */
+  padding: 0 !important;       /* garde la checkbox compacte */
   box-sizing: content-box;
-
-  /* ❌ CORRIGÉ : aucune marge abusive */
-  margin: 0 !important;
 }
+
+/* checkbox spécifique : s'assurer qu'elle garde sa taille native */
+.weekly-grid input[type="checkbox"] {
+  width: auto !important;
+  height: auto !important;
+  padding: 0;
+  margin: 0;
+}
+
+/* Règle pour le conteneur scrollable (garde-la si tu l'avais ajoutée) */
+.recurrence-options-container {
+  max-height: 200px;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding-right: 12px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
 
 
 .popup {
@@ -2416,16 +2438,6 @@ td[data-column="Observations"] {
 }
 
 /* --- Styles pour la gestion du débordement dans la zone de récurrence --- */
-
-/* --------- Container : autoriser scroll horizontal --------- */
-.recurrence-options-container {
-  max-height: 200px;        /* garde la hauteur max si tu veux */
-  overflow-x: auto;         /* <-- autorise le scroll horizontal (important) */
-  overflow-y: auto;         /* permet aussi le scroll vertical si besoin */
-  padding-right: 12px;      /* padding sûr (réduit) pour éviter découpe */
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
 
 #progressText {
     font-size: 14px;
