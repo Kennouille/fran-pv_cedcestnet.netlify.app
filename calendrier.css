@@ -1120,12 +1120,27 @@ td[data-column="Observations"] {
 }
 
 
+/* Assure que le texte et la checkbox restent côte à côte */
 .weekly-grid label {
-  display: flex;
-  align-items: center; /* aligne verticalement texte + coche */
-  gap: 10px;           /* espace fixe entre jour et coche */
-  font-size: 14px;
+  gap: 10px;                 /* déjà présent mais on le confirme */
+  align-items: center;
+  white-space: nowrap;       /* empêche les retours de ligne indésirables dans le label */
 }
+
+/* Corrige les checkboxes et inputs des labels de la grille hebdo */
+.weekly-grid input,
+.weekly-grid input[type="checkbox"],
+.weekly-grid label input {
+  width: auto !important;    /* annule le width:100% global */
+  max-width: none !important;
+  display: inline-block;     /* s'assure qu'ils restent à côté du texte */
+  vertical-align: middle;
+  box-sizing: content-box;
+  margin: 0;                 /* si tu veux ajuster l'espacement, fais-le ici */
+}
+
+
+
 
 .popup {
   display: none;
