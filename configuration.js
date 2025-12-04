@@ -1,6 +1,15 @@
 // Import de Supabase et initialisation du client
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
+// Palette de couleurs Outlook-like
+const COLOR_PALETTE = [
+    '#D83B01', '#E3008C', '#0078D7', '#00BCF2', '#00B294',
+    '#5D2A9C', '#B4009E', '#E74856', '#F7630C', '#FFB900',
+    '#7A7574', '#68768A', '#8E8CD8', '#8764B8', '#881798',
+    '#107C10', '#498205', '#767676', '#FF8C00', '#E81123',
+    '#2D7D9A', '#6B69D6', '#008272', '#515C6B', '#567C73'
+];
+
 const supabaseUrl = 'https://mngggybayjooqkzbhvqy.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uZ2dneWJheWpvb3FremJodnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY2MTU3NDgsImV4cCI6MjA0MjE5MTc0OH0.lnOqnq1AwN41g4xJ5O9oNIPBQqXYJkSrRhJ3osXtcsk';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -304,15 +313,89 @@ function renderUserRow(user, currentRole) {
 
     // Colonne Couleur (après Historique)
     const colorCell = document.createElement('td');
+    const colorSelector = document.createElement('div');
+    colorSelector.className = 'color-selector';
+
+    // Créer un conteneur pour la couleur actuelle et le bouton palette
+    const currentColorDisplay = document.createElement('div');
+    currentColorDisplay.className = 'current-color';
+    currentColorDisplay.style.width = '24px';
+    currentColorDisplay.style.height = '24px';
+    currentColorDisplay.style.borderRadius = '50%';
+    currentColorDisplay.style.backgroundColor = user.color || COLOR_PALETTE[0];
+    currentColorDisplay.style.display = 'inline-block';
+    currentColorDisplay.style.marginRight = '5px';
+    currentColorDisplay.style.border = '2px solid #ccc';
+    currentColorDisplay.style.cursor = 'pointer';
+    currentColorDisplay.title = getTranslation('click_to_change_color');
+
+    // Input caché pour stocker la valeur
     const colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.value = user.color || '#3498db'; // Valeur par défaut si pas de couleur
+    colorInput.type = 'hidden';
+    colorInput.value = user.color || COLOR_PALETTE[0];
+    colorInput.className = 'color-value';
+
+    // Conteneur pour la palette (cachée par défaut)
+    const paletteContainer = document.createElement('div');
+    paletteContainer.className = 'color-palette';
+    paletteContainer.style.display = 'none';
+    paletteContainer.style.position = 'absolute';
+    paletteContainer.style.backgroundColor = 'white';
+    paletteContainer.style.border = '1px solid #ccc';
+    paletteContainer.style.padding = '10px';
+    paletteContainer.style.borderRadius = '5px';
+    paletteContainer.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    paletteContainer.style.zIndex = '1000';
+
+    // Créer les cercles de couleur
+    COLOR_PALETTE.forEach(color => {
+        const colorCircle = document.createElement('div');
+        colorCircle.style.width = '20px';
+        colorCircle.style.height = '20px';
+        colorCircle.style.borderRadius = '50%';
+        colorCircle.style.backgroundColor = color;
+        colorCircle.style.display = 'inline-block';
+        colorCircle.style.margin = '3px';
+        colorCircle.style.cursor = 'pointer';
+        colorCircle.style.border = color === (user.color || COLOR_PALETTE[0]) ? '2px solid #000' : '1px solid #ddd';
+        colorCircle.title = color;
+
+        colorCircle.addEventListener('click', () => {
+            currentColorDisplay.style.backgroundColor = color;
+            colorInput.value = color;
+            paletteContainer.style.display = 'none';
+
+            // Mettre à jour la bordure sur le cercle sélectionné
+            paletteContainer.querySelectorAll('div').forEach(circle => {
+                circle.style.border = '1px solid #ddd';
+            });
+            colorCircle.style.border = '2px solid #000';
+        });
+
+        paletteContainer.appendChild(colorCircle);
+    });
+
+    // Gestion du clic sur l'affichage de la couleur actuelle
+    currentColorDisplay.addEventListener('click', (e) => {
+        e.stopPropagation();
+        paletteContainer.style.display = paletteContainer.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Cacher la palette quand on clique ailleurs
+    document.addEventListener('click', () => {
+        paletteContainer.style.display = 'none';
+    });
 
     // Si je ne suis pas Admin → je ne peux pas modifier la ligne Admin
     if (user.Nom === "Admin" && currentRole !== "Admin") {
-        colorInput.disabled = true;
+        currentColorDisplay.style.pointerEvents = 'none';
+        currentColorDisplay.style.opacity = '0.6';
     }
-    colorCell.appendChild(colorInput);
+
+    colorSelector.appendChild(currentColorDisplay);
+    colorSelector.appendChild(colorInput);
+    colorSelector.appendChild(paletteContainer);
+    colorCell.appendChild(colorSelector);
     row.appendChild(colorCell);
 
     // --- Colonnes Geodynamics ---
@@ -396,9 +479,9 @@ async function updateUser(id_code, name, code, row) {
         Quotidien: row.children[4].querySelector('input').checked,
         Configuration: row.children[5].querySelector('input').checked,
         Historique: row.children[6].querySelector('input').checked,
-        color: row.children[7].querySelector('input').value, // NOUVELLE LIGNE - couleur
-        geodynamics_id: row.children[8].querySelector('input').value.trim() || null, // Changé de 7 à 8
-        geodynamics_sync: row.children[9].querySelector('input').checked // Changé de 8 à 9
+        color: row.querySelector('.color-value').value, // CHANGÉ : récupérer depuis l'input hidden
+        geodynamics_id: row.children[8].querySelector('input').value.trim() || null,
+        geodynamics_sync: row.children[9].querySelector('input').checked
     };
 
     const { error } = await supabase.from('access_code1_fran').update(accessData).eq('id_code', id_code);
@@ -525,6 +608,85 @@ function injectLayoutStyles() {
     style.textContent = `
         #sectionsContainer { display: flex; gap: 40px; }
         #gestionCoordonneesBancaires { border-right: 1px solid #ccc; padding-right: 40px; }
+
+        /* Styles pour la palette de couleurs */
+        .color-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-palette {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 180px;
+            margin-top: 5px;
+        }
+
+        .current-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            border: 2px solid #ccc;
+        }
+
+        .color-palette div {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 3px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: transform 0.2s;
+        }
+
+        .color-palette div:hover {
+            transform: scale(1.1);
+            border: 2px solid #000;
+        }
+
+        .color-value {
+            display: none;
+        }
+
+        /* Styles pour le formulaire d'ajout */
+        #newUserColorSelector {
+            display: inline-block;
+            position: relative;
+            vertical-align: middle;
+        }
+
+        #newUserCurrentColor {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #0078D7;
+            display: inline-block;
+            vertical-align: middle;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+
+        #newUserPalette {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 180px;
+            margin-top: 5px;
+        }
     `;
     document.head.appendChild(style);
 }
