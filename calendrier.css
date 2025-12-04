@@ -1103,6 +1103,7 @@ td[data-column="Observations"] {
 }
 
 .weekly-grid {
+  max-width: 400px;
   display: flex;
   justify-content: center; /* centrer l’ensemble */
   gap: 100px;              /* espace entre les colonnes */
@@ -2397,10 +2398,6 @@ td[data-column="Observations"] {
 
 /* --- Styles pour la gestion du débordement dans la zone de récurrence --- */
 
-.recurrence-options-container {
-    max-height: none !important;  /* Enlève la limite */
-    overflow-y: visible !important; /* Pas de scroll */
-}
 
 #progressText {
     font-size: 14px;
