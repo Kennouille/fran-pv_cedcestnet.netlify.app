@@ -3717,7 +3717,8 @@
                 lieu = createGoogleMapsLink(lieu); // ← GARDEZ cette ligne importante !
             }
             const prix = document.getElementById('Prix') ? document.getElementById('Prix').value || null : null;
-            const observations = document.getElementById('Observations') ? document.getElementById('Observations').value || null : null;
+            const observationsRaw = document.getElementById('Observations') ? document.getElementById('Observations').value || null : null;
+            const observations = observationsRaw ? formatSimpleMarkdown(observationsRaw) : null;
             const nombre_heures = document.getElementById('NombreHeures') ? document.getElementById('NombreHeures').value || null : null;
             const employeSelect = document.getElementById('employeSelect');
             const ajouté_pour = employeSelect ? employeSelect.value || null : null;
@@ -4221,6 +4222,25 @@
             }
         }
 
+        // ============ FONCTION POUR CONVERTIR LE FORMATAGE OBSERVATIONS ============
+        function formatSimpleMarkdown(text) {
+            if (!text || text.trim() === '') return null;
+
+            let formattedText = text;
+
+            // Convertir **texte** en <strong>texte</strong>
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Convertir [yellow]texte[/yellow] en jaune fluo
+            formattedText = formattedText.replace(/\[yellow\](.*?)\[\/yellow\]/g, '<span style="background-color: yellow; padding: 1px 3px; border-radius: 2px;">$1</span>');
+
+            // Convertir les sauts de ligne
+            formattedText = formattedText.replace(/\n/g, '<br>');
+
+            return formattedText;
+        }
+        // ============ FIN FONCTION DE CONVERSION ============
+
         function showNomSuggestions(clients) {
             hideNomSuggestions(); // Supprimer les suggestions précédentes
 
@@ -4481,8 +4501,113 @@
         }
 
         // Initialiser le textarea du formulaire
+        // ============ DÉBUT : SECTION OBSERVATIONS AVEC FORMATAGE ============
+        // Initialiser le textarea du formulaire avec barre d'outils
         const observationsTextarea = document.getElementById('Observations');
         if (observationsTextarea) {
+            // === AJOUT : Créer une barre d'outils simple ===
+            const toolbar = document.createElement('div');
+            toolbar.style.cssText = `
+                display: flex;
+                gap: 5px;
+                margin-bottom: 5px;
+                flex-wrap: wrap;
+                padding: 5px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                border: 1px solid #dee2e6;
+            `;
+
+            // Bouton Gras
+            const boldBtn = document.createElement('button');
+            boldBtn.type = 'button';
+            boldBtn.innerHTML = '<strong>B</strong>';
+            boldBtn.title = 'Mettre en gras (Ctrl+B)';
+            boldBtn.style.cssText = `
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                background: white;
+                border-radius: 3px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 14px;
+                width: 32px;
+            `;
+
+            // Bouton Jaune fluo
+            const yellowBtn = document.createElement('button');
+            yellowBtn.type = 'button';
+            yellowBtn.innerHTML = '🟡';
+            yellowBtn.title = 'Surligner en jaune';
+            yellowBtn.style.cssText = `
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                background: white;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 14px;
+                width: 32px;
+            `;
+
+            // Insertion de la barre d'outils AVANT le textarea
+            observationsTextarea.parentNode.insertBefore(toolbar, observationsTextarea);
+            toolbar.appendChild(boldBtn);
+            toolbar.appendChild(yellowBtn);
+
+            // === Fonction pour entourer le texte sélectionné ===
+            function wrapSelection(tag, style) {
+                const start = observationsTextarea.selectionStart;
+                const end = observationsTextarea.selectionEnd;
+                const text = observationsTextarea.value;
+                const selectedText = text.substring(start, end);
+
+                if (selectedText) {
+                    let wrappedText = '';
+                    let newCursorPos = start;
+
+                    if (tag === 'strong') {
+                        wrappedText = `**${selectedText}**`;
+                        newCursorPos = start + 2; // Place le curseur après **
+                    } else if (style === 'yellow') {
+                        wrappedText = `[yellow]${selectedText}[/yellow]`;
+                        newCursorPos = start + 8; // Place le curseur après [yellow]
+                    }
+
+                    const newText = text.substring(0, start) + wrappedText + text.substring(end);
+                    observationsTextarea.value = newText;
+
+                    // Remettre le focus et positionner le curseur
+                    observationsTextarea.focus();
+                    observationsTextarea.setSelectionRange(newCursorPos, newCursorPos + selectedText.length);
+
+                    // Redéclencher l'auto-expansion
+                    autoExpandFormTextarea(observationsTextarea);
+                }
+            }
+
+            // === Événements des boutons ===
+            boldBtn.addEventListener('click', function() {
+                wrapSelection('strong');
+            });
+
+            yellowBtn.addEventListener('click', function() {
+                wrapSelection(null, 'yellow');
+            });
+
+            // === Raccourcis clavier (Ctrl+B pour gras) ===
+            observationsTextarea.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'b') {
+                    e.preventDefault();
+                    wrapSelection('strong');
+                }
+            });
+
+            // === Fonction d'auto-expansion ===
+            function autoExpandFormTextarea(textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = (textarea.scrollHeight) + 'px';
+            }
+
             // Initialiser la hauteur
             autoExpandFormTextarea(observationsTextarea);
 
@@ -4496,6 +4621,7 @@
                 autoExpandFormTextarea(this);
             });
         }
+        // ============ FIN : SECTION OBSERVATIONS AVEC FORMATAGE ============
 
 
             let isCalendarGenerated = false;
