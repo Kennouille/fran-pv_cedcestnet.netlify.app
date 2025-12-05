@@ -6220,7 +6220,7 @@
 
                               // --- RÉCUPÉRATION DE LA VALEUR CORRECTE ---
                               if (column === "Observations") {
-                                const textarea = row.querySelector('[data-field="observations"]');
+                                const textarea = cell.querySelector("textarea");
                                 cellValue = textarea ? textarea.value.trim() : "";
                               } else if (column === "Travail") {
                                 // ✅ Cible le SELECT dans la cellule Travail
