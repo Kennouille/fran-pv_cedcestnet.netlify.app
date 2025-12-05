@@ -1786,6 +1786,12 @@
             const modificationsFromRow = {};
 
                 Array.from(row.cells).forEach(cell => {
+                    // 🔥 DEBUG OBLIGATOIRE ICI
+                    console.log("CELL ==== ", {
+                        text: cell.textContent.trim(),
+                        dataset: cell.dataset
+                    });
+
                     const column = cell.dataset.column;
 
                     if (column && column !== "Travail") {
