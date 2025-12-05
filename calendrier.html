@@ -1770,7 +1770,7 @@
         async function applyChangesWithoutPrompt(row, isSeries) {
             const userId = row.dataset.userId;
 
-            // 1️⃣ Récupérer l'événement complet depuis Supabase (ORIGINAL)
+            // 1️⃣ Récupérer l'événement complet depuis Supabase
             const { data: rendezvousActuel, error } = await supabase
                 .from('event_quot1_fran')
                 .select('*')
@@ -1782,11 +1782,12 @@
             }
             const recurrenceId = rendezvousActuel.recurrence_id;
 
-            // 2️⃣ Construire modificationsFromRow
+            // 2️⃣ Construire modificationsFromRow en filtrant SEULEMENT les champs qui ont vraiment changé
             const modificationsFromRow = {};
             Array.from(row.cells).forEach(cell => {
                 const column = cell.dataset.column;
 
+                // 🚨 IGNORER COMPLÈTEMENT LA COLONNE 'Travail'
                 if (column && column !== "Travail") {
                     let cellValue;
 
@@ -1798,29 +1799,20 @@
                     }
 
                     const nouvelleValeur = cellValue === "" ? null : cellValue;
+                    const ancienneValeur = rendezvousActuel[column] === "" ? null : rendezvousActuel[column];
 
-                    // 🔴 CORRECTION : Récupérer la valeur ORIGINALE depuis la BDD
-                    const ancienneValeurBDD = rendezvousActuel[column];
-                    const ancienneValeur = ancienneValeurBDD === "" || ancienneValeurBDD === null ? null : ancienneValeurBDD;
-
-                    // 🔴 CORRECTION : Comparaison correcte
-                    const hasChanged = (
-                        (nouvelleValeur === null && ancienneValeur !== null) ||
-                        (nouvelleValeur !== null && ancienneValeur === null) ||
-                        (nouvelleValeur !== null && ancienneValeur !== null && nouvelleValeur !== ancienneValeur)
-                    );
-
-                    if (hasChanged) {
+                    // On inclut uniquement si la valeur de l'UI est différente de la valeur initiale en base
+                    if (String(nouvelleValeur) !== String(ancienneValeur)) {
                         modificationsFromRow[column] = nouvelleValeur;
-                        console.log(`✅ Changement détecté pour ${column}:`, {
-                            ancienne: ancienneValeur,
-                            nouvelle: nouvelleValeur
-                        });
                     }
                 }
             });
 
-            // 3️⃣ Envoyer SEULEMENT si il y a des changements
+            // 🔴 DEBUG : Vérifiez ce qui est dans modificationsFromRow
+            console.log("🛠️ modificationsFromRow à envoyer:", modificationsFromRow);
+            console.log("🛠️ Nombre de champs modifiés:", Object.keys(modificationsFromRow).length);
+
+            // 3️⃣ Envoyer SEULEMENT les champs qui doivent être mis à jour.
             if (Object.keys(modificationsFromRow).length > 0) {
                 await updateEventData(row, rendezvousActuel, isSeries, recurrenceId, modificationsFromRow);
             } else {
