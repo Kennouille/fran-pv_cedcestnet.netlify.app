@@ -1805,9 +1805,21 @@
                             const nouvelleValeurNorm =
                                 nouvelleValeur === "" ? null : nouvelleValeur;
 
+                            // 🔥 DEBUG COMPLÉTISSIME
+                            console.log("=== DEBUG OBSERVATIONS ===");
+                            console.log("column =", column);
+                            console.log("textarea trouvé =", !!textarea);
+                            console.log("nouvelleValeur =", nouvelleValeur);
+                            console.log("ancienneValeur =", ancienneValeur);
+                            console.log("nouvelleValeurNorm =", nouvelleValeurNorm);
+                            console.log("Comparaison =", String(nouvelleValeurNorm), "!=", String(ancienneValeur));
+                            console.log("===========================");
+
                             if (String(nouvelleValeurNorm) !== String(ancienneValeur)) {
                                 modificationsFromRow["Observations"] = nouvelleValeurNorm;
                             }
+                        }
+
 
                         // 🔹 Tous les autres champs
                         } else {
