@@ -6281,9 +6281,7 @@
                                   const normalizedOld = (ancienneValeur === "EMPTY" ? null : ancienneValeur);
                                   const normalizedNew = (cellValue === "EMPTY" ? null : cellValue);
 
-                                  if (String(normalizedOld) !== String(normalizedNew))
-
-                                    updatedEvent[column] = normalizedNew;
+                                  if (String(normalizedOld) !== String(normalizedNew)) {
 
                                     modifications.push({
                                       user_id: userId,
