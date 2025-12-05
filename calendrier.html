@@ -5390,8 +5390,7 @@
                            <textarea class="observation-text auto-expand-textarea"
                                       data-field="observations"
                                       rows="2"
-                                      ${isConfigUser ? '' : 'readonly style="background-color: #f5f5f5; color: #666;"'}>
-                                ${event.Observations || ''}
+                                      ${isConfigUser ? '' : 'readonly style="background-color: #f5f5f5; color: #666;"'}>${event.Observations || ''}
                             </textarea>
 
                             <!-- Case à cocher pour photos obligatoires (seulement pour configuser) -->
