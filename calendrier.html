@@ -5807,20 +5807,6 @@
                         });
 
 
-                        const observationsTextarea = row.querySelector('.observation-text');
-                        if (observationsTextarea) {
-                            observationsTextarea.addEventListener('blur', function() {
-                                applyChangesWithoutPrompt(row, false);
-                            });
-
-                            observationsTextarea.addEventListener('keydown', function(e) {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    this.blur();
-                                }
-                            });
-                        }
-
                         // Activer la lightbox pour les miniatures de CETTE ligne
                         row.querySelectorAll('.photo-avant, .photo-apres').forEach(img => {
                           img.addEventListener('click', () => {
