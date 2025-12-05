@@ -6670,152 +6670,349 @@
 
         // NOTE: Assurez-vous d'avoir les fonctions isOnline, addToQueue et syncData définies.
 
+
         async function updateEventData(row, rendezvousActuel, applySeries = false, recurrenceId = null, modificationsFromRow = {}) {
-          const userId = row.dataset.userId;
-          const modifiePar = localStorage.getItem('currentPersonName');
-          const dateModification = getLocalDateTime();
+            const userId = row.dataset.userId;
+            const modifiePar = localStorage.getItem('currentPersonName');
+            const dateModification = getLocalDateTime();
 
-          // ⚡ Détecter uniquement les champs qui ont vraiment changé
-          const champsModifies = {};
-          for (const [col, newVal] of Object.entries(modificationsFromRow)) {
-            const oldVal = rendezvousActuel[col];
-            if (String(newVal) !== String(oldVal)) { // Utilisation de String() pour comparaison stricte des valeurs
-              champsModifies[col] = newVal;
+            // ⚡ Détecter uniquement les champs qui ont vraiment changé
+            const champsModifies = {};
+            for (const [col, newVal] of Object.entries(modificationsFromRow)) {
+                const oldVal = rendezvousActuel[col];
+                if (String(newVal) !== String(oldVal)) {
+                    champsModifies[col] = newVal;
+                }
             }
-          }
 
-          // ⚡ Ne jamais toucher à ces colonnes
-          delete champsModifies["user_id"];
-          delete champsModifies["recurrence_id"];
-          delete champsModifies["Travail"];
-          delete champsModifies["Pointage"];
+            // ⚡ Ne jamais toucher à ces colonnes
+            delete champsModifies["user_id"];
+            delete champsModifies["recurrence_id"];
+            delete champsModifies["Travail"];
+            delete champsModifies["Pointage"];
 
+            const colonnesAMettreAJour = Object.keys(champsModifies);
 
-          const colonnesAMettreAJour = Object.keys(champsModifies);
-
-          if (colonnesAMettreAJour.length === 0) {
-            console.log("ℹ️ Aucun changement détecté, rien à mettre à jour.");
-            return;
-          }
-
-          // 🚀 Fonction pour enregistrer l'historique (MIS À JOUR POUR LE HORS LIGNE)
-          const logModifications = async (targetUserId, originalEventData, modifiedFields) => {
-            const nombre = originalEventData['Nom'] || '-';
-            const telephone = originalEventData['Téléphone'] || '-';
-
-            for (const [column, nouvelleValeur] of Object.entries(modifiedFields)) {
-              const ancienneValeur = originalEventData[column];
-
-              if (String(ancienneValeur) !== String(nouvelleValeur)) {
-                // 🚨 IMPORTANT : On n'enregistre PAS l'historique directement en base.
-                // On le loggue localement pour que l'utilisateur le voie, mais l'enregistrement
-                // final en BDD est laissé à la fonction de synchronisation si vous voulez
-                // traiter l'historique comme une file d'attente.
-                // Pour ce cas, on le laisse en appel direct pour l'instant, mais gardez cette
-                // potentielle limite à l'esprit en cas de déconnexion.
-                // Si vous voulez le mettre en file d'attente, il faudrait que logModification
-                // utilise aussi addToQueue pour les opérations INSERT.
-
-                // POUR LA SIMPLICITÉ, on garde l'enregistrement direct (il échouera hors ligne)
-                // et on suppose que l'utilisateur verra son historique se mettre à jour après reconnexion.
-                await supabase
-                  .from("historique_modif_fran")
-                  .insert([{
-                    user_id: targetUserId,
-                    modifié_par: modifiePar,
-                    date_modification: dateModification,
-                    champ_modifié: column,
-                    valeur_ancienne: ancienneValeur,
-                    valeur_nouvelle: nouvelleValeur,
-                    action: 'Modification',
-                    Nombre: nombre,
-                    Telefono: telephone
-                  }]);
-              }
+            if (colonnesAMettreAJour.length === 0) {
+                console.log("ℹ️ Aucun changement détecté, rien à mettre à jour.");
+                return;
             }
-          };
 
-          try {
-            const eventsToUpdate = []; // Stocke les requêtes d'UPDATE (Payload + Cible)
+            // 🚀 Création de la barre de progression
+            const createProgressBar = () => {
+                const progressContainer = document.createElement('div');
+                progressContainer.id = 'progress-bar-container';
+                progressContainer.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 25px;
+                    border-radius: 12px;
+                    box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    min-width: 400px;
+                    text-align: center;
+                    font-family: Arial, sans-serif;
+                    display: none;
+                `;
 
-            for (const column of colonnesAMettreAJour) {
-                const valeurNouvelle = champsModifies[column];
-                const updatePayload = { [column]: valeurNouvelle };
-                const specificChange = { [column]: valeurNouvelle };
+                const title = document.createElement('h3');
+                title.textContent = getTranslation('progress_updating') || 'Mise à jour en cours...';
+                title.style.cssText = 'margin-bottom: 20px; color: #333; font-size: 18px;';
 
-                if (applySeries && recurrenceId) {
-                    // Logique série
-                    const { data: allEvents, error } = isOnline() ? await supabase
-                        .from('event_quot1_fran')
-                        .select('*')
-                        .eq('recurrence_id', recurrenceId) : { data: [], error: null }; // Lit la série en ligne ou rien hors ligne
+                const progressBar = document.createElement('div');
+                progressBar.id = 'progress-bar';
+                progressBar.style.cssText = `
+                    width: 100%;
+                    height: 12px;
+                    background: #e0e0e0;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    margin-bottom: 10px;
+                `;
 
-                    if (error) {
-                        console.error("Erreur récupération série en ligne. Arrêt.", error);
-                        return;
-                    }
+                const progressFill = document.createElement('div');
+                progressFill.id = 'progress-fill';
+                progressFill.style.cssText = `
+                    width: 0%;
+                    height: 100%;
+                    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+                    border-radius: 10px;
+                    transition: width 0.3s ease;
+                `;
 
-                    const currentDate = new Date(rendezvousActuel.Date);
+                const progressText = document.createElement('div');
+                progressText.id = 'progress-text';
+                progressText.style.cssText = 'font-size: 14px; color: #666; margin-bottom: 15px;';
 
-                    for (const evt of allEvents) {
-                        const evtDate = new Date(evt.Date);
+                const cancelButton = document.createElement('button');
+                cancelButton.id = 'progress-cancel';
+                cancelButton.textContent = getTranslation('cancel') || 'Annuler';
+                cancelButton.style.cssText = `
+                    background: #f44336;
+                    color: white;
+                    border: none;
+                    padding: 8px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    margin-top: 10px;
+                `;
 
-                        if (evtDate >= currentDate) {
-                            // Logger la modification
-                            await logModifications(evt.user_id, evt, specificChange);
+                cancelButton.addEventListener('mouseenter', () => {
+                    cancelButton.style.backgroundColor = '#d32f2f';
+                });
+                cancelButton.addEventListener('mouseleave', () => {
+                    cancelButton.style.backgroundColor = '#f44336';
+                });
 
-                            // Ajouter à la liste des requêtes
-                            eventsToUpdate.push({
-                                targetTable: 'event_quot1_fran',
-                                targetId: { user_id: evt.user_id },
-                                payload: updatePayload
-                            });
+                // Assemblage
+                progressBar.appendChild(progressFill);
+                progressContainer.appendChild(title);
+                progressContainer.appendChild(progressBar);
+                progressContainer.appendChild(progressText);
+                progressContainer.appendChild(cancelButton);
+
+                document.body.appendChild(progressContainer);
+
+                return {
+                    container: progressContainer,
+                    fill: progressFill,
+                    text: progressText,
+                    cancel: cancelButton
+                };
+            };
+
+            // Initialiser la barre de progression
+            const progress = createProgressBar();
+            let isCancelled = false;
+            let totalSteps = 0;
+            let currentStep = 0;
+
+            // Gestionnaire d'annulation
+            progress.cancel.addEventListener('click', () => {
+                isCancelled = true;
+                progress.text.textContent = getTranslation('progress_cancelling') || 'Annulation en cours...';
+                progress.cancel.disabled = true;
+            });
+
+            // Fonction pour mettre à jour la progression
+            const updateProgress = (step, total, message = '') => {
+                currentStep = step;
+                totalSteps = total;
+                const percentage = Math.round((step / total) * 100);
+
+                progress.fill.style.width = `${percentage}%`;
+
+                let progressMessage = message || `${step}/${total} ${getTranslation('progress_items') || 'éléments traités'}`;
+                if (applySeries) {
+                    progressMessage = `${getTranslation('progress_series') || 'Série'} - ${progressMessage}`;
+                }
+
+                progress.text.textContent = progressMessage;
+            };
+
+            // Fonction pour cacher la barre de progression
+            const hideProgress = () => {
+                setTimeout(() => {
+                    progress.container.style.display = 'none';
+                    document.body.removeChild(progress.container);
+                }, 500);
+            };
+
+            // 🚀 Fonction pour enregistrer l'historique
+            const logModifications = async (targetUserId, originalEventData, modifiedFields) => {
+                const nombre = originalEventData['Nom'] || '-';
+                const telephone = originalEventData['Téléphone'] || '-';
+
+                for (const [column, nouvelleValeur] of Object.entries(modifiedFields)) {
+                    if (isCancelled) return false;
+
+                    const ancienneValeur = originalEventData[column];
+
+                    if (String(ancienneValeur) !== String(nouvelleValeur)) {
+                        try {
+                            await supabase
+                                .from("historique_modif_fran")
+                                .insert([{
+                                    user_id: targetUserId,
+                                    modifié_par: modifiePar,
+                                    date_modification: dateModification,
+                                    champ_modifié: column,
+                                    valeur_ancienne: ancienneValeur,
+                                    valeur_nouvelle: nouvelleValeur,
+                                    action: 'Modification',
+                                    Nombre: nombre,
+                                    Telefono: telephone
+                                }]);
+
+                            // Mettre à jour la progression
+                            currentStep++;
+                            updateProgress(currentStep, totalSteps,
+                                getTranslation('progress_logging') || 'Enregistrement historique...');
+
+                        } catch (error) {
+                            console.error("Erreur lors de l'enregistrement historique:", error);
+                            // Continuer malgré l'erreur pour ne pas bloquer tout le processus
                         }
                     }
+                }
+                return true;
+            };
+
+            try {
+                // Afficher la barre de progression
+                progress.container.style.display = 'block';
+
+                const eventsToUpdate = [];
+                let allEvents = [];
+                let totalEvents = 0;
+
+                // Calculer le nombre total d'étapes
+                if (applySeries && recurrenceId) {
+                    // Logique série
+                    if (isOnline()) {
+                        const { data: events, error } = await supabase
+                            .from('event_quot1_fran')
+                            .select('*')
+                            .eq('recurrence_id', recurrenceId);
+
+                        if (error) {
+                            console.error("Erreur récupération série en ligne. Arrêt.", error);
+                            hideProgress();
+                            return;
+                        }
+
+                        const currentDate = new Date(rendezvousActuel.Date);
+                        allEvents = events.filter(evt => new Date(evt.Date) >= currentDate);
+                    } else {
+                        allEvents = [];
+                    }
+                } else {
+                    // Cas simple
+                    allEvents = [rendezvousActuel];
+                }
+
+                totalEvents = allEvents.length;
+                totalSteps = totalEvents * colonnesAMettreAJour.length + totalEvents; // + pour les logs
+                updateProgress(0, totalSteps, getTranslation('progress_preparing') || 'Préparation...');
+
+                if (isCancelled) {
+                    hideProgress();
+                    return;
+                }
+
+                // Traiter chaque colonne pour chaque événement
+                for (const column of colonnesAMettreAJour) {
+                    if (isCancelled) break;
+
+                    const valeurNouvelle = champsModifies[column];
+                    const updatePayload = { [column]: valeurNouvelle };
+                    const specificChange = { [column]: valeurNouvelle };
+
+                    for (const evt of allEvents) {
+                        if (isCancelled) break;
+
+                        // Logger la modification
+                        const logged = await logModifications(evt.user_id, evt, specificChange);
+                        if (!logged) break;
+
+                        // Ajouter à la liste des requêtes
+                        eventsToUpdate.push({
+                            targetTable: 'event_quot1_fran',
+                            targetId: { user_id: evt.user_id },
+                            payload: updatePayload
+                        });
+
+                        // Mettre à jour la progression
+                        currentStep++;
+                        updateProgress(currentStep, totalSteps,
+                            getTranslation('progress_processing') || 'Traitement...');
+                    }
+                }
+
+                if (isCancelled) {
+                    console.log("⚠️ Mise à jour annulée par l'utilisateur");
+                    hideProgress();
+
+                    // Afficher un message d'annulation
+                    window.successMessage.textContent = getTranslation('progress_cancelled') || 'Mise à jour annulée';
+                    window.successMessage.style.backgroundColor = '#ff9800';
+                    window.successMessage.style.display = 'block';
+                    setTimeout(() => {
+                        window.successMessage.style.display = 'none';
+                        window.successMessage.style.backgroundColor = ''; // Réinitialiser
+                    }, 2000);
+                    return;
+                }
+
+                // --- TRAITEMENT DES REQUÊTES EN FILE D'ATTENTE ---
+                if (eventsToUpdate.length > 0) {
+                    updateProgress(totalSteps - 1, totalSteps,
+                        getTranslation('progress_queueing') || 'Ajout à la file d\'attente...');
+
+                    // 1. Enregistre toutes les requêtes dans la file d'attente locale
+                    let queueCount = 0;
+                    for (const req of eventsToUpdate) {
+                        if (isCancelled) break;
+
+                        await addToQueue({ type: 'UPDATE', ...req });
+                        queueCount++;
+
+                        // Mettre à jour la progression
+                        updateProgress(totalSteps - eventsToUpdate.length + queueCount, totalSteps,
+                            `${queueCount}/${eventsToUpdate.length} ${getTranslation('progress_queued') || 'requêtes en file d\'attente'}`);
+                    }
+
+                    console.log(`✅ ${queueCount} requête(s) ajoutée(s) à la file d'attente locale.`);
+
+                    // 2. Finaliser la progression
+                    updateProgress(totalSteps, totalSteps,
+                        getTranslation('progress_completed') || 'Mise à jour terminée !');
+
+                    // 3. Lance la synchronisation si en ligne
+                    if (isOnline() && !isCancelled) {
+                        console.log("📡 En ligne. Tentative de synchronisation immédiate.");
+                        setTimeout(() => {
+                            syncData();
+                            hideProgress();
+                        }, 1000);
+                    } else {
+                        setTimeout(hideProgress, 1000);
+                    }
+
+                    // Message succès visuel
+                    window.successMessage.textContent = getTranslation('temp_msg_data_updated_success');
+                    window.successMessage.style.display = 'block';
+                    setTimeout(() => {
+                        window.successMessage.style.display = 'none';
+                    }, 3000);
 
                 } else {
-                    // Cas simple : mise à jour chirurgicale d'un seul événement
-
-                    // Logger la modification
-                    await logModifications(userId, rendezvousActuel, specificChange);
-
-                    // Ajouter à la liste des requêtes
-                    eventsToUpdate.push({
-                        targetTable: 'event_quot1_fran',
-                        targetId: { user_id: userId },
-                        payload: updatePayload
-                    });
+                    hideProgress();
                 }
+
+            } catch (e) {
+                console.error("❌ Erreur updateEventData :", e);
+
+                // Afficher un message d'erreur
+                progress.text.textContent = getTranslation('progress_error') || 'Erreur lors de la mise à jour';
+                progress.fill.style.backgroundColor = '#f44336';
+
+                setTimeout(hideProgress, 2000);
+
+                window.successMessage.textContent = getTranslation('error_updating_data') || 'Erreur lors de la mise à jour';
+                window.successMessage.style.backgroundColor = '#f44336';
+                window.successMessage.style.display = 'block';
+                setTimeout(() => {
+                    window.successMessage.style.display = 'none';
+                    window.successMessage.style.backgroundColor = '';
+                }, 3000);
             }
-
-            // --- NOUVEAU: TRAITEMENT DES REQUÊTES EN FILE D'ATTENTE ---
-            if (eventsToUpdate.length > 0) {
-
-                // 1. Enregistre toutes les requêtes dans la file d'attente locale
-                for (const req of eventsToUpdate) {
-                    await addToQueue({ type: 'UPDATE', ...req });
-                }
-
-                console.log(`✅ ${eventsToUpdate.length} requête(s) ajoutée(s) à la file d'attente locale.`);
-
-                // 2. Lance la synchronisation si en ligne
-                if (isOnline()) {
-                    console.log("📡 En ligne. Tentative de synchronisation immédiate.");
-                    syncData();
-                }
-            }
-
-            // Message succès visuel (indique que la modification est enregistrée)
-            window.successMessage.textContent = getTranslation('temp_msg_data_updated_success');
-            window.successMessage.style.display = 'block';
-            setTimeout(() => {
-              window.successMessage.style.display = 'none';
-            }, 1000);
-
-          } catch (e) {
-            console.error("❌ Erreur updateEventData :", e);
-          }
         }
+
 
 
         // ______________________________________________________________________
