@@ -1799,8 +1799,9 @@
 
                         // 🔹 Cas particulier : Observations (textarea)
                         if (column === "Observations") {
-                            const textarea = row.querySelector('[data-field="observations"]');
+                            const textarea = cell.querySelector('[data-field="observations"]'); // ✅ FIX ICI
                             const nouvelleValeur = textarea ? textarea.value.trim() : "";
+
 
                             const ancienneValeur =
                                 rendezvousActuel["Observations"] === "" ||
