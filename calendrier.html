@@ -5528,19 +5528,6 @@
                               await saveTravailField(userId, fieldName, fieldValue, row);
                           });
                       }
-
-                      // 2. GESTION DU CHAMP OBSERVATIONS (TEXTAREA)
-                      const observationTextarea = row.querySelector('[data-column="Observations"] textarea[data-field="observations"]');
-                      if (observationTextarea) {
-                          observationTextarea.addEventListener('blur', async () => {
-                              const userId = row.dataset.userId;
-                              const fieldName = observationTextarea.dataset.field; // "observations"
-                              const fieldValue = observationTextarea.value.trim();
-
-                              // Utilise la même fonction de sauvegarde si elle gère les deux colonnes
-                              await saveTravailField(userId, fieldName, fieldValue, row);
-                          });
-                      }
                     }
                         // Activer les boutons photo "Avant" et "Après"
                         row.querySelectorAll('.btn-photo').forEach(button => {
