@@ -1784,28 +1784,48 @@
             const recurrenceId = rendezvousActuel.recurrence_id;
 
             const modificationsFromRow = {};
-            Array.from(row.cells).forEach(cell => {
-                const column = cell.dataset.column;
 
-                if (column && column !== "Travail") {
-                    let cellValue;
+                Array.from(row.cells).forEach(cell => {
+                    const column = cell.dataset.column;
 
-                    if (column === "Observations") {
-                        const textarea = row.querySelector('[data-field="observations"]');
-                        cellValue = textarea ? textarea.value.trim() : "";
-                        // FORCER l'inclusion de Observations si modifié
-                        modificationsFromRow[column] = cellValue === "" ? null : cellValue;
-                    } else {
-                        cellValue = cell.textContent.trim();
-                        const nouvelleValeur = cellValue === "" ? null : cellValue;
-                        const ancienneValeur = rendezvousActuel[column] === "" ? null : rendezvousActuel[column];
+                    if (column && column !== "Travail") {
+                        let cellValue;
 
-                        if (String(nouvelleValeur) !== String(ancienneValeur)) {
-                            modificationsFromRow[column] = nouvelleValeur;
+                        // 🔹 Cas particulier : Observations (textarea)
+                        if (column === "Observations") {
+                            const textarea = row.querySelector('[data-field="observations"]');
+                            const nouvelleValeur = textarea ? textarea.value.trim() : "";
+
+                            const ancienneValeur =
+                                rendezvousActuel["Observations"] === "" ||
+                                rendezvousActuel["Observations"] === null
+                                    ? null
+                                    : String(rendezvousActuel["Observations"]).trim();
+
+                            const nouvelleValeurNorm =
+                                nouvelleValeur === "" ? null : nouvelleValeur;
+
+                            if (String(nouvelleValeurNorm) !== String(ancienneValeur)) {
+                                modificationsFromRow["Observations"] = nouvelleValeurNorm;
+                            }
+
+                        // 🔹 Tous les autres champs
+                        } else {
+                            cellValue = cell.textContent.trim();
+                            const nouvelleValeur = cellValue === "" ? null : cellValue;
+
+                            const ancienneValeur =
+                                rendezvousActuel[column] === "" ||
+                                rendezvousActuel[column] === null
+                                    ? null
+                                    : rendezvousActuel[column];
+
+                            if (String(nouvelleValeur) !== String(ancienneValeur)) {
+                                modificationsFromRow[column] = nouvelleValeur;
+                            }
                         }
                     }
-                }
-            });
+                });
 
             if (Object.keys(modificationsFromRow).length > 0) {
                 await updateEventData(row, rendezvousActuel, isSeries, recurrenceId, modificationsFromRow);
