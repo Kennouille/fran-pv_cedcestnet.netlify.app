@@ -6474,60 +6474,60 @@
 
 
         async function updateSeriesWithProgress(rendezvousActuel, recurrenceId, updatedEvent) {
-        // 🔹 Récupérer tous les événements de la série
-        const { data: events, error } = await supabase
-            .from("event_quot1_fran")
-            .select("*")
-            .eq("recurrence_id", recurrenceId);
-
-        if (error) {
-            console.error("Erreur récupération série :", error);
-            return;
-        }
-
-        const total = events.length;
-        let done = 0;
-
-        // 🔹 Afficher la barre
-        const overlay = document.getElementById("overlay");
-        const progressBar = document.getElementById("progressBar");
-        const progressText = document.getElementById("progressText");
-
-        if (overlay) {
-            overlay.style.display = "flex";
-            progressBar.style.width = "0%";
-            progressText.textContent = `0/${total} modifications`;
-        }
-
-        await new Promise(r => setTimeout(r, 50));
-
-        // 🔹 Appliquer les modifications une par une
-        for (const ev of events) {
-
-            done++;
-            const percent = (done / total) * 100;
-
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            if (progressText) progressText.textContent = `${done}/${total} modifications`;
-
-            await supabase
+            // 🔹 Récupérer tous les événements de la série
+            const { data: events, error } = await supabase
                 .from("event_quot1_fran")
-                .update(updatedEvent)
-                .eq("user_id", ev.user_id);
+                .select("*")
+                .eq("recurrence_id", recurrenceId);
 
-            await new Promise(r => setTimeout(r, 10));
+            if (error) {
+                console.error("Erreur récupération série :", error);
+                return;
+            }
+
+            const total = events.length;
+            let done = 0;
+
+            // 🔹 Afficher la barre
+            const overlay = document.getElementById("overlay");
+            const progressBar = document.getElementById("progressBar");
+            const progressText = document.getElementById("progressText");
+
+            if (overlay) {
+                overlay.style.display = "flex";
+                progressBar.style.width = "0%";
+                progressText.textContent = `0/${total} modifications`;
+            }
+
+            await new Promise(r => setTimeout(r, 50));
+
+            // 🔹 Appliquer les modifications une par une
+            for (const ev of events) {
+
+                done++;
+                const percent = (done / total) * 100;
+
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `${done}/${total} modifications`;
+
+                await supabase
+                    .from("event_quot1_fran")
+                    .update(updatedEvent)
+                    .eq("user_id", ev.user_id);
+
+                await new Promise(r => setTimeout(r, 10));
+            }
+
+            // 🔹 Fin
+            if (overlay) {
+                progressText.textContent = `✔️ Série mise à jour (${done}/${total})`;
+                progressBar.style.width = "100%";
+                await new Promise(r => setTimeout(r, 1500));
+                overlay.style.display = "none";
+            }
+
+            console.log("🔥 Série modifiée avec succès.");
         }
-
-        // 🔹 Fin
-        if (overlay) {
-            progressText.textContent = `✔️ Série mise à jour (${done}/${total})`;
-            progressBar.style.width = "100%";
-            await new Promise(r => setTimeout(r, 1500));
-            overlay.style.display = "none";
-        }
-
-        console.log("🔥 Série modifiée avec succès.");
-    }
 
 
         async function deleteSeries(recurrenceId) {
