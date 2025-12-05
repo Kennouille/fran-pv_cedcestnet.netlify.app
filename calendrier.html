@@ -189,12 +189,15 @@
                 delete operation.payload.Téléphone;
             }
 
+            // 1b. Supprimer Num. Client:null de tous les payloads
+            if (operation.payload && operation.payload["Num. Client"] === null) {
+                console.log('🛠️ Suppression Num. Client:null du payload');
+                delete operation.payload["Num. Client"];
+            }
+
             // 2. Ne PAS ignorer les payloads vides si c'est une mise à jour légitime
-            // (ex: mettre Observations à null est une opération valide)
             if (operation.payload && Object.keys(operation.payload).length === 0) {
                 console.log('ℹ️ Payload vide après nettoyage');
-                // 🔴 NE PAS return ici - continuez le traitement
-                // Le payload vide pourrait être une mise à jour valide (ex: effacer Observations)
             }
 
             // 3. Ignorer les opérations avec targetId.Téléphone vide
@@ -202,7 +205,7 @@
                 console.log('⚠️ TargetId.Téléphone vide, opération ignorée');
                 return;
             }
-            // === CORRECTION UNIQUE - FIN ===
+
 
             // --- Début de la SIMULATION (Remplacez par IndexedDB en production) ---
             try {
