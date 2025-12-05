@@ -189,10 +189,12 @@
                 delete operation.payload.Téléphone;
             }
 
-            // 2. Ignorer les opérations avec payload vide après nettoyage
+            // 2. Ne PAS ignorer les payloads vides si c'est une mise à jour légitime
+            // (ex: mettre Observations à null est une opération valide)
             if (operation.payload && Object.keys(operation.payload).length === 0) {
-                console.log('⚠️ Payload vide après nettoyage, opération ignorée');
-                return;
+                console.log('ℹ️ Payload vide après nettoyage');
+                // 🔴 NE PAS return ici - continuez le traitement
+                // Le payload vide pourrait être une mise à jour valide (ex: effacer Observations)
             }
 
             // 3. Ignorer les opérations avec targetId.Téléphone vide
