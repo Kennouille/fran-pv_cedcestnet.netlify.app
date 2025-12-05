@@ -6738,42 +6738,55 @@
           try {
             const eventsToUpdate = []; // Stocke les requêtes d'UPDATE (Payload + Cible)
 
-            // ⚡ Préparer la barre d'avancement
-            const overlay = document.getElementById("overlay");
-            const progressBar = document.getElementById("progressBar");
-            const progressText = document.getElementById("progressText");
+            for (const column of colonnesAMettreAJour) {
+                const valeurNouvelle = champsModifies[column];
+                const updatePayload = { [column]: valeurNouvelle };
+                const specificChange = { [column]: valeurNouvelle };
 
-            const totalUpdates = eventsToUpdate.length;
-            let doneUpdates = 0;
+                if (applySeries && recurrenceId) {
+                    // Logique série
+                    const { data: allEvents, error } = isOnline() ? await supabase
+                        .from('event_quot1_fran')
+                        .select('*')
+                        .eq('recurrence_id', recurrenceId) : { data: [], error: null }; // Lit la série en ligne ou rien hors ligne
 
-            if (overlay) {
-                overlay.style.display = "flex";
-                progressBar.style.width = "0%";
-                progressText.textContent = `0/${totalUpdates} modifications`;
+                    if (error) {
+                        console.error("Erreur récupération série en ligne. Arrêt.", error);
+                        return;
+                    }
+
+                    const currentDate = new Date(rendezvousActuel.Date);
+
+                    for (const evt of allEvents) {
+                        const evtDate = new Date(evt.Date);
+
+                        if (evtDate >= currentDate) {
+                            // Logger la modification
+                            await logModifications(evt.user_id, evt, specificChange);
+
+                            // Ajouter à la liste des requêtes
+                            eventsToUpdate.push({
+                                targetTable: 'event_quot1_fran',
+                                targetId: { user_id: evt.user_id },
+                                payload: updatePayload
+                            });
+                        }
+                    }
+
+                } else {
+                    // Cas simple : mise à jour chirurgicale d'un seul événement
+
+                    // Logger la modification
+                    await logModifications(userId, rendezvousActuel, specificChange);
+
+                    // Ajouter à la liste des requêtes
+                    eventsToUpdate.push({
+                        targetTable: 'event_quot1_fran',
+                        targetId: { user_id: userId },
+                        payload: updatePayload
+                    });
+                }
             }
-
-            // ⚡ Appliquer les mises à jour une par une
-            for (const evt of eventsToUpdate) {
-                const { targetTable, targetId, payload } = evt;
-
-                await supabase.from(targetTable).update(payload).match(targetId);
-
-                doneUpdates++;
-                if (progressBar) progressBar.style.width = `${(doneUpdates / totalUpdates) * 100}%`;
-                if (progressText) progressText.textContent = `${doneUpdates}/${totalUpdates} modifications`;
-
-                // Petite pause pour rendre la progression visible
-                await new Promise(r => setTimeout(r, 50));
-            }
-
-            // ⚡ Terminer la barre
-            if (overlay) {
-                progressText.textContent = `✔️ Modifications terminées (${doneUpdates}/${totalUpdates})`;
-                progressBar.style.width = "100%";
-                await new Promise(r => setTimeout(r, 500));
-                overlay.style.display = "none";
-            }
-
 
             // --- NOUVEAU: TRAITEMENT DES REQUÊTES EN FILE D'ATTENTE ---
             if (eventsToUpdate.length > 0) {
