@@ -6670,7 +6670,7 @@
 
         // NOTE: Assurez-vous d'avoir les fonctions isOnline, addToQueue et syncData définies.
 
-        async function updateEventData(row, rendezvousActuel, applySeries = false, recurrenceId = null, modificationsFromRow = {}) {
+       async function updateEventData(row, rendezvousActuel, applySeries = false, recurrenceId = null, modificationsFromRow = {}) {
             const userId = row.dataset.userId;
             const modifiePar = localStorage.getItem('currentPersonName');
             const dateModification = getLocalDateTime();
@@ -6797,6 +6797,8 @@
             let isCancelled = false;
             let totalEvents = 0;
             let processedEvents = 0;
+            let totalOperations = 0;
+            let completedOperations = 0;
 
             // Gestionnaire d'annulation
             progress.cancel.addEventListener('click', () => {
@@ -6811,12 +6813,7 @@
                 const percentage = Math.round((current / total) * 100);
                 progress.bar.style.width = `${percentage}%`;
 
-                let progressMessage = message || `${current}/${total} événements mis à jour`;
-                if (applySeries && recurrenceId) {
-                    progressMessage = `Série - ${progressMessage}`;
-                }
-
-                progress.text.textContent = progressMessage;
+                progress.text.textContent = message || `${current}/${total} opérations`;
             };
 
             // Fonction pour cacher la barre de progression
@@ -6831,7 +6828,7 @@
                 // Afficher la barre de progression
                 progress.overlay.style.display = "flex";
                 progress.bar.style.width = "0%";
-                progress.text.textContent = `0/... événements en cours`;
+                progress.text.textContent = "Initialisation...";
                 await new Promise(resolve => setTimeout(resolve, 50));
 
                 const eventsToUpdate = [];
@@ -6863,80 +6860,90 @@
                 }
 
                 totalEvents = allEvents.length;
+                // Chaque événement aura plusieurs opérations: historique + mise à jour
+                totalOperations = totalEvents * colonnesAMettreAJour.length * 2;
                 processedEvents = 0;
-
-                // Initialiser le texte de progression
-                updateProgress(0, totalEvents, `Préparation de ${totalEvents} événement(s)...`);
+                completedOperations = 0;
 
                 if (isCancelled) {
                     hideProgress();
                     return;
                 }
 
-                // 🔹 BOUCLE PRINCIPALE - Traiter chaque événement un par un
+                // 🔹 PHASE 1: TRAITEMENT DES ÉVÉNEMENTS ET ENREGISTREMENT HISTORIQUE
+                updateProgress(0, totalOperations, `Préparation de ${totalEvents} événement(s)...`);
+
+                // 🔹 BOUCLE PRINCIPALE - Traiter chaque événement
                 for (let i = 0; i < allEvents.length; i++) {
                     if (isCancelled) break;
 
                     const evt = allEvents[i];
                     processedEvents++;
 
-                    // 🔹 METTRE À JOUR LA PROGRESSION
-                    updateProgress(processedEvents, totalEvents, `Traitement de l'événement ${processedEvents}/${totalEvents}`);
+                    // Mettre à jour le texte de progression
+                    updateProgress(completedOperations, totalOperations,
+                        `Événement ${processedEvents}/${totalEvents} - Traitement en cours...`);
 
                     // Traiter chaque colonne modifiée pour cet événement
                     for (const column of colonnesAMettreAJour) {
                         if (isCancelled) break;
 
                         const valeurNouvelle = champsModifies[column];
-                        const updatePayload = { [column]: valeurNouvelle };
-                        const specificChange = { [column]: valeurNouvelle };
-
-                        // 🔹 LOGUER LA MODIFICATION (historique)
-                        const nombre = evt['Nom'] || '-';
-                        const telephone = evt['Téléphone'] || '-';
                         const ancienneValeur = evt[column];
 
                         if (String(ancienneValeur) !== String(valeurNouvelle)) {
-                            try {
-                                await supabase
-                                    .from("historique_modif_fran")
-                                    .insert([{
-                                        user_id: evt.user_id,
-                                        modifié_par: modifiePar,
-                                        date_modification: dateModification,
-                                        champ_modifié: column,
-                                        valeur_ancienne: ancienneValeur,
-                                        valeur_nouvelle: valeurNouvelle,
-                                        action: 'Modification',
-                                        Nombre: nombre,
-                                        Telefono: telephone
-                                    }]);
+                            // 🔹 1. ENREGISTRER L'HISTORIQUE (si en ligne)
+                            if (isOnline()) {
+                                const nombre = evt['Nom'] || '-';
+                                const telephone = evt['Téléphone'] || '-';
 
-                                // 🔹 Mettre à jour le texte de progression
-                                progress.text.textContent = `Événement ${processedEvents}/${totalEvents} - Historique enregistré`;
+                                try {
+                                    await supabase
+                                        .from("historique_modif_fran")
+                                        .insert([{
+                                            user_id: evt.user_id,
+                                            modifié_par: modifiePar,
+                                            date_modification: dateModification,
+                                            champ_modifié: column,
+                                            valeur_ancienne: ancienneValeur,
+                                            valeur_nouvelle: valeurNouvelle,
+                                            action: 'Modification',
+                                            Nombre: nombre,
+                                            Telefono: telephone
+                                        }]);
 
-                            } catch (error) {
-                                console.error("Erreur lors de l'enregistrement historique:", error);
+                                    completedOperations++;
+                                    updateProgress(completedOperations, totalOperations,
+                                        `Événement ${processedEvents}/${totalEvents} - Historique enregistré`);
+
+                                } catch (error) {
+                                    console.error("Erreur lors de l'enregistrement historique:", error);
+                                    // Continue malgré l'erreur
+                                }
                             }
+
+                            // 🔹 2. PRÉPARER LA MISE À JOUR
+                            const updatePayload = { [column]: valeurNouvelle };
+                            eventsToUpdate.push({
+                                targetTable: 'event_quot1_fran',
+                                targetId: { user_id: evt.user_id },
+                                payload: updatePayload
+                            });
+
+                            completedOperations++;
+                            updateProgress(completedOperations, totalOperations,
+                                `Événement ${processedEvents}/${totalEvents} - Modification préparée`);
                         }
 
-                        // 🔹 AJOUTER À LA LISTE DES REQUÊTES
-                        eventsToUpdate.push({
-                            targetTable: 'event_quot1_fran',
-                            targetId: { user_id: evt.user_id },
-                            payload: updatePayload
-                        });
+                        // Petite pause pour l'animation
+                        await new Promise(resolve => setTimeout(resolve, 10));
                     }
-
-                    // 🔹 PETITE PAUSE POUR L'ANIMATION (optionnel)
-                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
 
                 if (isCancelled) {
                     console.log("⚠️ Mise à jour annulée par l'utilisateur");
                     hideProgress();
 
-                    // Afficher un message d'annulation
                     window.successMessage.textContent = getTranslation('progress_cancelled') || 'Mise à jour annulée';
                     window.successMessage.style.backgroundColor = '#ff9800';
                     window.successMessage.style.display = 'block';
@@ -6947,39 +6954,36 @@
                     return;
                 }
 
-                // 🔹 AJOUTER LES REQUÊTES À LA FILE D'ATTENTE
+                // 🔹 PHASE 2: AJOUT À LA FILE D'ATTENTE
                 if (eventsToUpdate.length > 0) {
-                    progress.text.textContent = `Ajout de ${eventsToUpdate.length} requête(s) à la file d'attente...`;
+                    progress.text.textContent = `Ajout à la file d'attente...`;
 
-                    let queueCount = 0;
-                    for (const req of eventsToUpdate) {
+                    // Ajouter chaque opération à la file d'attente avec progression
+                    for (let i = 0; i < eventsToUpdate.length; i++) {
                         if (isCancelled) break;
 
-                        await addToQueue({ type: 'UPDATE', ...req });
-                        queueCount++;
+                        await addToQueue({ type: 'UPDATE', ...eventsToUpdate[i] });
+                        completedOperations++;
 
-                        // 🔹 METTRE À JOUR LA PROGRESSION POUR LES FILES D'ATTENTE
-                        const queuePercentage = Math.round((queueCount / eventsToUpdate.length) * 50) + 50;
-                        progress.bar.style.width = `${queuePercentage}%`;
-                        progress.text.textContent = `File d'attente : ${queueCount}/${eventsToUpdate.length} requêtes`;
+                        // Mettre à jour la progression
+                        updateProgress(completedOperations, totalOperations,
+                            `File d'attente : ${i + 1}/${eventsToUpdate.length} requêtes`);
 
-                        await new Promise(resolve => setTimeout(resolve, 5)); // Petite pause
+                        // Petite pause pour l'animation
+                        await new Promise(resolve => setTimeout(resolve, 5));
                     }
 
-                    console.log(`✅ ${queueCount} requête(s) ajoutée(s) à la file d'attente locale.`);
+                    console.log(`✅ ${eventsToUpdate.length} requête(s) ajoutée(s) à la file d'attente locale.`);
 
                     // 🔹 FINALISER LA PROGRESSION
                     progress.bar.style.width = "100%";
-                    progress.text.textContent = `✅ ${processedEvents} événement(s) mis à jour avec succès`;
+                    progress.text.textContent = `✅ ${processedEvents} événement(s) mis à jour`;
+
+                    // La synchronisation se fera automatiquement via les écouteurs d'événements
+                    // On ne l'appelle pas directement ici pour garder la progression cohérente
 
                     // Attendre un peu pour que l'utilisateur voie le message
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-
-                    // 2. Lance la synchronisation si en ligne
-                    if (isOnline() && !isCancelled) {
-                        console.log("📡 En ligne. Tentative de synchronisation immédiate.");
-                        syncData();
-                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
                     hideProgress();
 
@@ -6990,10 +6994,20 @@
                         window.successMessage.style.display = 'none';
                     }, 3000);
 
+                    // 🔹 DÉCLENCHER LA SYNCHRONISATION APRÈS AVOIR CACHÉ LA BARRE
+                    // (Optionnel - si vous voulez que ça se fasse en arrière-plan)
+                    if (isOnline() && !isCancelled) {
+                        // Délai court pour laisser le temps à l'interface de se rafraîchir
+                        setTimeout(() => {
+                            console.log("📡 Lancement de la synchronisation en arrière-plan...");
+                            syncData();
+                        }, 500);
+                    }
+
                 } else {
                     // Aucune modification à enregistrer
-                    progress.text.textContent = "✅ Aucune modification nécessaire";
                     progress.bar.style.width = "100%";
+                    progress.text.textContent = "✅ Aucune modification nécessaire";
                     setTimeout(hideProgress, 1000);
                 }
 
