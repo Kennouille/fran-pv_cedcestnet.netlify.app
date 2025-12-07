@@ -1,5 +1,5 @@
 // Import de Supabase et initialisation du client
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { supabase } from './supabaseClientAgendaJour.js';
 
 // Palette de couleurs Outlook-like
 const COLOR_PALETTE = [
@@ -37,10 +37,6 @@ const COLOR_PALETTE = [
     '#515C6B', // Gris ardoise
     '#567C73'  // Vert-gris
 ];
-
-const supabaseUrl = 'https://mngggybayjooqkzbhvqy.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uZ2dneWJheWpvb3FremJodnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY2MTU3NDgsImV4cCI6MjA0MjE5MTc0OH0.lnOqnq1AwN41g4xJ5O9oNIPBQqXYJkSrRhJ3osXtcsk';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Début des fonctions et variables de traduction directement dans configuration.js ---
 
