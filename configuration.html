@@ -52,6 +52,272 @@
                 position: fixed
             }
         }
+
+        .pricing-section {
+            margin-top: 50px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .pricing-section h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* Toggle switch */
+        .pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .toggle-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #0078d7;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .discount-badge {
+            background: #ff9800;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Tableau des prix */
+        .pricing-table {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            width: 320px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .pricing-card.popular {
+            border: 2px solid #0078d7;
+            transform: scale(1.02);
+        }
+
+        .pricing-card.popular:hover {
+            transform: scale(1.02) translateY(-5px);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: 12px;
+            right: -30px;
+            background: #0078d7;
+            color: white;
+            padding: 5px 30px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            width: 120px;
+            text-align: center;
+        }
+
+        .card-header {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .pricing-card.popular .card-header {
+            background: linear-gradient(135deg, #0078d7 0%, #005a9e 100%);
+        }
+
+        .card-header h4 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .price-amount {
+            font-size: 48px;
+        }
+
+        .price-currency {
+            font-size: 24px;
+            vertical-align: super;
+        }
+
+        .price-period {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .card-body {
+            padding: 20px;
+            min-height: 350px;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-item {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+
+        .feature-check {
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .feature-cross {
+            color: #f44336;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .feature-item.disabled {
+            opacity: 0.5;
+        }
+
+        .card-footer {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .btn-select {
+            width: 100%;
+            padding: 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-primary {
+            background: #0078d7;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005a9e;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pricing-table {
+                gap: 20px;
+            }
+
+            .pricing-card {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pricing-table {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pricing-card {
+                width: 100%;
+                max-width: 350px;
+            }
+
+            .pricing-card.popular {
+                transform: scale(1);
+            }
+
+            .pricing-card.popular:hover {
+                transform: translateY(-5px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -129,6 +395,164 @@
                 <input type="text" id="meteoCityInput" data-translate-placeholder="placeholder_weather_city" placeholder="Ville,Pays (ex: London,GB)">
                 <ul id="citySuggestions" style="border: 1px solid #ccc; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; display: none; position: absolute; background-color: white; z-index: 1000; width: calc(100% - 22px);"></ul>
                 <button id="saveMeteoCityButton" data-translate="save_weather_city_button">Enregistrer la ville météo</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pricing-section">
+        <h3 data-translate="pricing_title">Nos Offres</h3>
+
+        <div class="pricing-toggle">
+            <span class="toggle-label" data-translate="monthly_label">Mensuel</span>
+            <label class="switch">
+                <input type="checkbox" id="pricingToggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="toggle-label" data-translate="annual_label">Annuel</span>
+            <span class="discount-badge" data-translate="save_10">Économisez 10%</span>
+        </div>
+
+        <div class="pricing-table">
+            <!-- Offre Basic -->
+            <div class="pricing-card">
+                <div class="card-header">
+                    <h4>Basic</h4>
+                    <div class="price">
+                        <span class="price-amount" data-monthly="19" data-annual="199">19</span>
+                        <span class="price-currency">€</span>
+                    </div>
+                    <div class="price-period" data-translate="monthly_price">/mois</div>
+                </div>
+                <div class="card-body">
+                    <ul class="features-list">
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_1_admin">1 admin</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_2_users">2 users</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_5_events">5 événements par jour max.</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
+                        </li>
+                        <li class="feature-item disabled">
+                            <span class="feature-cross">✗</span>
+                            <span data-translate="feature_statistics">Statistiques</span>
+                        </li>
+                        <li class="feature-item disabled">
+                            <span class="feature-cross">✗</span>
+                            <span data-translate="feature_history">Historique</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-select" data-translate="select_plan_button">Choisir cette offre</button>
+                </div>
+            </div>
+
+            <!-- Offre Premium -->
+            <div class="pricing-card popular">
+                <div class="popular-badge" data-translate="most_popular">Le plus populaire</div>
+                <div class="card-header">
+                    <h4>Premium</h4>
+                    <div class="price">
+                        <span class="price-amount" data-monthly="29" data-annual="309">29</span>
+                        <span class="price-currency">€</span>
+                    </div>
+                    <div class="price-period" data-translate="monthly_price">/mois</div>
+                </div>
+                <div class="card-body">
+                    <ul class="features-list">
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_2_admins">2 admins</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_10_users">10 users</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_20_events">20 événements par jour max.</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_statistics">Statistiques</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_history">Historique</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-select btn-primary" data-translate="select_plan_button">Choisir cette offre</button>
+                </div>
+            </div>
+
+            <!-- Offre Business -->
+            <div class="pricing-card">
+                <div class="card-header">
+                    <h4>Business</h4>
+                    <div class="price">
+                        <span class="price-amount" data-monthly="59" data-annual="639">59</span>
+                        <span class="price-currency">€</span>
+                    </div>
+                    <div class="price-period" data-translate="monthly_price">/mois</div>
+                </div>
+                <div class="card-body">
+                    <ul class="features-list">
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_unlimited_admins">admins illimités</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_unlimited_users">users illimités</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_unlimited_events">Nombre d'événements illimités par jour</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_statistics">Statistiques</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <span data-translate="feature_history">Historique</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-select" data-translate="select_plan_button">Choisir cette offre</button>
+                </div>
             </div>
         </div>
     </div>

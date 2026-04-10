@@ -840,3 +840,79 @@ async function saveBankInformation() {
     }
     showTemporaryMessage('bank_info_saved_success');
 }
+
+// Script pour gérer le toggle mensuel/annuel
+document.addEventListener('DOMContentLoaded', function() {
+    const pricingToggle = document.getElementById('pricingToggle');
+    if (!pricingToggle) return;
+
+    const priceElements = document.querySelectorAll('.price-amount');
+    const periodElements = document.querySelectorAll('.price-period');
+
+    function updatePrices(isAnnual) {
+        priceElements.forEach(el => {
+            const monthlyPrice = el.getAttribute('data-monthly');
+            const annualPrice = el.getAttribute('data-annual');
+
+            if (isAnnual && annualPrice) {
+                el.textContent = annualPrice;
+            } else {
+                el.textContent = monthlyPrice;
+            }
+        });
+
+        periodElements.forEach(el => {
+            if (isAnnual) {
+                el.setAttribute('data-translate', 'annual_price');
+                el.textContent = '/an';
+            } else {
+                el.setAttribute('data-translate', 'monthly_price');
+                el.textContent = '/mois';
+            }
+        });
+    }
+
+    pricingToggle.addEventListener('change', function() {
+        updatePrices(this.checked);
+    });
+
+    // Initialisation
+    updatePrices(false);
+});
+
+// Ajout des traductions manquantes (si nécessaire)
+const translationsToAdd = {
+    'pricing_title': 'Nos Offres',
+    'monthly_label': 'Mensuel',
+    'annual_label': 'Annuel',
+    'save_10': 'Économisez 10%',
+    'monthly_price': '/mois',
+    'annual_price': '/an',
+    'feature_1_admin': '1 admin',
+    'feature_2_users': '2 users',
+    'feature_5_events': '5 événements par jour max.',
+    'feature_whatsapp_reminders': 'Rappels Whatsapp pour les rendez-vous',
+    'feature_tickets_receipts': 'Envoi de tickets et reçus',
+    'feature_statistics': 'Statistiques',
+    'feature_history': 'Historique',
+    'feature_2_admins': '2 admins',
+    'feature_10_users': '10 users',
+    'feature_20_events': '20 événements par jour max.',
+    'feature_unlimited_admins': 'admins illimités',
+    'feature_unlimited_users': 'users illimités',
+    'feature_unlimited_events': "Nombre d'événements illimités par jour",
+    'most_popular': 'Le plus populaire',
+    'select_plan_button': 'Choisir cette offre'
+};
+
+// Intégration avec votre système de traduction existant
+if (typeof getTranslation === 'function') {
+    // Surcharge partielle pour les nouvelles clés
+    const originalGetTranslation = getTranslation;
+    window.getTranslation = function(key) {
+        if (translationsToAdd[key] && (!loadedTranslations[currentLang] || !loadedTranslations[currentLang][key])) {
+            return translationsToAdd[key];
+        }
+        return originalGetTranslation(key);
+    };
+}
