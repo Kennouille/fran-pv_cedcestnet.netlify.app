@@ -916,3 +916,53 @@ if (typeof getTranslation === 'function') {
         return originalGetTranslation(key);
     };
 }
+
+// Gestion du toggle mensuel/annuel pour les prix
+function initPricingToggle() {
+    const pricingToggle = document.getElementById('pricingToggle');
+    if (!pricingToggle) return;
+
+    const priceElements = document.querySelectorAll('.price-amount');
+    const periodElements = document.querySelectorAll('.price-period');
+
+    function updatePrices(isAnnual) {
+        priceElements.forEach(el => {
+            const monthlyPrice = el.getAttribute('data-monthly');
+            const annualPrice = el.getAttribute('data-annual');
+
+            if (isAnnual && annualPrice) {
+                el.textContent = annualPrice;
+            } else {
+                el.textContent = monthlyPrice;
+            }
+        });
+
+        periodElements.forEach(el => {
+            if (isAnnual) {
+                // Le texte sera mis à jour par applyTranslations()
+                el.setAttribute('data-translate', 'annual_price');
+            } else {
+                el.setAttribute('data-translate', 'monthly_price');
+            }
+        });
+
+        // Réappliquer les traductions pour mettre à jour les textes
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
+    }
+
+    pricingToggle.addEventListener('change', function() {
+        updatePrices(this.checked);
+    });
+
+    // Initialisation
+    updatePrices(false);
+}
+
+// Appeler la fonction après le chargement du DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPricingToggle);
+} else {
+    initPricingToggle();
+}

@@ -618,7 +618,28 @@
   "field_observations": "Observaciones",
   "field_paid": "Pagado",
   "field_data_sent": "Datos enviados",
-  "th_color": "Color"
+  "th_color": "Color",
+  "pricing_title": "Nuestros Planes",
+  "monthly_label": "Mensual",
+  "annual_label": "Anual",
+  "save_10": "Ahorra 10%",
+  "monthly_price": "/mes",
+  "annual_price": "/año",
+  "feature_1_admin": "1 admin",
+  "feature_2_users": "2 usuarios",
+  "feature_5_events": "5 eventos por día máx.",
+  "feature_whatsapp_reminders": "Recordatorios por Whatsapp",
+  "feature_tickets_receipts": "Envío de tickets y recibos",
+  "feature_statistics": "Estadísticas",
+  "feature_history": "Historial",
+  "feature_2_admins": "2 admins",
+  "feature_10_users": "10 usuarios",
+  "feature_20_events": "20 eventos por día máx.",
+  "feature_unlimited_admins": "admins ilimitados",
+  "feature_unlimited_users": "usuarios ilimitados",
+  "feature_unlimited_events": "Eventos ilimitados por día",
+  "most_popular": "Más popular",
+  "select_plan_button": "Elegir este plan"
 
 
 

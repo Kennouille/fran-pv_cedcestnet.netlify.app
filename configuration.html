@@ -137,7 +137,90 @@
             margin-left: 10px;
         }
 
-        /* Tableau des prix */
+        /* Section des prix */
+        .pricing-section {
+            margin-top: 50px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .pricing-section h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .toggle-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #0078d7;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .discount-badge {
+            background: #ff9800;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
         .pricing-table {
             display: flex;
             flex-wrap: wrap;
@@ -288,12 +371,10 @@
             background: #005a9e;
         }
 
-        /* Responsive */
         @media (max-width: 1024px) {
             .pricing-table {
                 gap: 20px;
             }
-
             .pricing-card {
                 width: 280px;
             }
@@ -304,18 +385,12 @@
                 flex-direction: column;
                 align-items: center;
             }
-
             .pricing-card {
                 width: 100%;
                 max-width: 350px;
             }
-
             .pricing-card.popular {
                 transform: scale(1);
-            }
-
-            .pricing-card.popular:hover {
-                transform: translateY(-5px);
             }
         }
     </style>
@@ -399,6 +474,7 @@
         </div>
     </div>
 
+    <!-- Section des prix -->
     <div class="pricing-section">
         <h3 data-translate="pricing_title">Nos Offres</h3>
 
@@ -413,7 +489,7 @@
         </div>
 
         <div class="pricing-table">
-            <!-- Offre Basic -->
+            <!-- Basic -->
             <div class="pricing-card">
                 <div class="card-header">
                     <h4>Basic</h4>
@@ -425,34 +501,13 @@
                 </div>
                 <div class="card-body">
                     <ul class="features-list">
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_1_admin">1 admin</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_2_users">2 users</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_5_events">5 événements par jour max.</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
-                        </li>
-                        <li class="feature-item disabled">
-                            <span class="feature-cross">✗</span>
-                            <span data-translate="feature_statistics">Statistiques</span>
-                        </li>
-                        <li class="feature-item disabled">
-                            <span class="feature-cross">✗</span>
-                            <span data-translate="feature_history">Historique</span>
-                        </li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_1_admin">1 admin</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_2_users">2 users</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_5_events">5 événements par jour max.</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span></li>
+                        <li class="feature-item disabled"><span class="feature-cross">✗</span><span data-translate="feature_statistics">Statistiques</span></li>
+                        <li class="feature-item disabled"><span class="feature-cross">✗</span><span data-translate="feature_history">Historique</span></li>
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -460,7 +515,7 @@
                 </div>
             </div>
 
-            <!-- Offre Premium -->
+            <!-- Premium -->
             <div class="pricing-card popular">
                 <div class="popular-badge" data-translate="most_popular">Le plus populaire</div>
                 <div class="card-header">
@@ -473,34 +528,13 @@
                 </div>
                 <div class="card-body">
                     <ul class="features-list">
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_2_admins">2 admins</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_10_users">10 users</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_20_events">20 événements par jour max.</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_statistics">Statistiques</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_history">Historique</span>
-                        </li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_2_admins">2 admins</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_10_users">10 users</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_20_events">20 événements par jour max.</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_statistics">Statistiques</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_history">Historique</span></li>
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -508,7 +542,7 @@
                 </div>
             </div>
 
-            <!-- Offre Business -->
+            <!-- Business -->
             <div class="pricing-card">
                 <div class="card-header">
                     <h4>Business</h4>
@@ -520,34 +554,13 @@
                 </div>
                 <div class="card-body">
                     <ul class="features-list">
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_unlimited_admins">admins illimités</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_unlimited_users">users illimités</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_unlimited_events">Nombre d'événements illimités par jour</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_statistics">Statistiques</span>
-                        </li>
-                        <li class="feature-item">
-                            <span class="feature-check">✓</span>
-                            <span data-translate="feature_history">Historique</span>
-                        </li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_unlimited_admins">admins illimités</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_unlimited_users">users illimités</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_unlimited_events">Nombre d'événements illimités par jour</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_whatsapp_reminders">Rappels Whatsapp pour les rendez-vous</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_tickets_receipts">Envoi de tickets et reçus</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_statistics">Statistiques</span></li>
+                        <li class="feature-item"><span class="feature-check">✓</span><span data-translate="feature_history">Historique</span></li>
                     </ul>
                 </div>
                 <div class="card-footer">

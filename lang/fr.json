@@ -618,7 +618,28 @@
   "field_observations": "Observations",
   "field_paid": "Payé",
   "field_data_sent": "Données envoyées",
-  "th_color": "Couleur"
+  "th_color": "Couleur",
+  "pricing_title": "Nos Offres",
+  "monthly_label": "Mensuel",
+  "annual_label": "Annuel",
+  "save_10": "Économisez 10%",
+  "monthly_price": "/mois",
+  "annual_price": "/an",
+  "feature_1_admin": "1 admin",
+  "feature_2_users": "2 users",
+  "feature_5_events": "5 événements par jour max.",
+  "feature_whatsapp_reminders": "Rappels Whatsapp pour les rendez-vous",
+  "feature_tickets_receipts": "Envoi de tickets et reçus",
+  "feature_statistics": "Statistiques",
+  "feature_history": "Historique",
+  "feature_2_admins": "2 admins",
+  "feature_10_users": "10 users",
+  "feature_20_events": "20 événements par jour max.",
+  "feature_unlimited_admins": "admins illimités",
+  "feature_unlimited_users": "users illimités",
+  "feature_unlimited_events": "Nombre d'événements illimités par jour",
+  "most_popular": "Le plus populaire",
+  "select_plan_button": "Choisir cette offre"
 
 
 
